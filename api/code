@@ -1,6 +1,7 @@
 module.exports = async function (context, req) {
+    context.log('JavaScript HTTP trigger function processed a request.');
+    
     // Set CORS headers
-    // Allow requests from any origin in development, replace with your domain in production
     const allowedOrigins = [
         'http://localhost:3000',
         'http://localhost:5173',
