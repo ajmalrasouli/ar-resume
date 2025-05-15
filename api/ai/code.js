@@ -1,6 +1,16 @@
 export default async function handler(req, res) {
     // Set CORS headers
-    res.setHeader('Access-Control-Allow-Origin', 'https://lemon-desert-05dc5301e.6.azurestaticapps.net');
+    // Allow requests from any origin in development, replace with your domain in production
+    const allowedOrigins = [
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'https://lemon-desert-05dc5301e.6.azurestaticapps.net',
+        'https://your-production-domain.azurestaticapps.net'
+    ];
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    }
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     
@@ -24,7 +34,7 @@ export default async function handler(req, res) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`
+                'Authorization': `Bearer ${process.env.VITE_DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY}`
             },
             body: JSON.stringify({
                 model: 'deepseek-coder',
@@ -39,7 +49,7 @@ export default async function handler(req, res) {
 
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.error?.message || 'Failed to fetch from DeepSeek API');
+            throw new Error(error.error?.message || 'Failed to fetch from DeepSeek API. Please check your API key and try again.');
         }
 
         const data = await response.json();
