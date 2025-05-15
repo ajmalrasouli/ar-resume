@@ -3,29 +3,45 @@ const path = require('path');
 
 // Source and destination directories
 const sourceDir = process.cwd();
-const outputDir = path.join(process.cwd(), '.vercel_build_output', 'static');
+const outputDir = path.join(process.cwd(), 'build');  // Changed output directory
 
 // Create output directory if it doesn't exist
-if (!fs.existsSync(outputDir)) {
-  fs.mkdirSync(outputDir, { recursive: true });
+if (fs.existsSync(outputDir)) {
+  // Remove existing build directory to avoid conflicts
+  fs.rmSync(outputDir, { recursive: true, force: true });
+}
+fs.mkdirSync(outputDir, { recursive: true });
+
+// Files and directories to exclude
+const excludeDirs = ['node_modules', '.git', '.vercel', '.github', 'build'];
+const excludeFiles = ['.env', '.env.*', 'vercel-build.js'];
+
+// Function to check if a path should be excluded
+function shouldExclude(filePath) {
+  const relativePath = path.relative(sourceDir, filePath);
+  return excludeDirs.some(dir => 
+    relativePath === dir || 
+    relativePath.startsWith(dir + path.sep)
+  ) || excludeFiles.some(file => 
+    relativePath === file || 
+    relativePath.endsWith(path.sep + file)
+  );
 }
 
 // Function to copy files
 function copyRecursiveSync(src, dest) {
-  const exists = fs.existsSync(src);
-  if (!exists) return;
-
   const stats = fs.statSync(src);
+  
   if (stats.isDirectory()) {
     if (!fs.existsSync(dest)) {
       fs.mkdirSync(dest, { recursive: true });
     }
     fs.readdirSync(src).forEach(childItem => {
-      if (childItem !== 'node_modules' && childItem !== '.git') {
-        copyRecursiveSync(
-          path.join(src, childItem),
-          path.join(dest, childItem)
-        );
+      const srcPath = path.join(src, childItem);
+      const destPath = path.join(dest, childItem);
+      
+      if (!shouldExclude(srcPath)) {
+        copyRecursiveSync(srcPath, destPath);
       }
     });
   } else {
@@ -33,20 +49,9 @@ function copyRecursiveSync(src, dest) {
   }
 }
 
-// Copy all files except node_modules and .git
+console.log('Starting build...');
+
+// Copy all files except excluded ones
 copyRecursiveSync(sourceDir, outputDir);
 
-// Create vercel.json configuration
-const vercelConfig = {
-  version: 2,
-  buildCommand: 'npm run build',
-  outputDirectory: '.vercel_build_output/static'
-};
-
-// Write vercel.json
-fs.writeFileSync(
-  path.join(process.cwd(), '.vercel_build_output', 'config.json'),
-  JSON.stringify(vercelConfig, null, 2)
-);
-
-console.log('Build completed successfully!');
+console.log('Build completed successfully! Output directory:', outputDir);
