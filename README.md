@@ -4,6 +4,7 @@ Here's what I came up with as a solution to the [Azure Resume Challenge](https:/
 View it live [here](https://lemon-desert-05dc5301e.6.azurestaticapps.net)
 
 
+
 Before going through these steps you’ll need to have an Azure account. If you don’t have one you can setup a free trial account at https://azure.microsoft.com/free. Let’s walk through each of these steps.
 
 ![Diagram](assets/img/diagram.png)
