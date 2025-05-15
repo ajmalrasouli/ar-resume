@@ -5,13 +5,6 @@
   },
   "routes": [
     {
-      "route": "/api/*",
-      "allowedRoles": ["anonymous"],
-      "headers": {
-        "Content-Type": "application/json"
-      }
-    },
-    {
       "route": "/api/chat",
       "allowedRoles": ["anonymous"],
       "methods": ["POST", "OPTIONS"],
@@ -23,6 +16,13 @@
       "route": "/api/code",
       "allowedRoles": ["anonymous"],
       "methods": ["POST", "OPTIONS"],
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    {
+      "route": "/api/*",
+      "allowedRoles": ["anonymous"],
       "headers": {
         "Content-Type": "application/json"
       }
