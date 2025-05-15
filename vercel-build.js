@@ -3,7 +3,7 @@ const path = require('path');
 
 // Source and destination directories
 const sourceDir = process.cwd();
-const outputDir = path.join(process.cwd(), 'build');  // Changed output directory
+const outputDir = path.join(process.cwd(), 'build');
 
 // Create output directory if it doesn't exist
 if (fs.existsSync(outputDir)) {
@@ -13,18 +13,25 @@ if (fs.existsSync(outputDir)) {
 fs.mkdirSync(outputDir, { recursive: true });
 
 // Files and directories to exclude
-const excludeDirs = ['node_modules', '.git', '.vercel', '.github', 'build'];
-const excludeFiles = ['.env', '.env.*', 'vercel-build.js'];
+const excludeDirs = ['node_modules', '.git', '.vercel', '.github', 'build', 'api'];
+const excludeFiles = ['.env', '.env.*', 'vercel-build.js', '*.md', '*.mdx', '*.log'];
 
 // Function to check if a path should be excluded
 function shouldExclude(filePath) {
   const relativePath = path.relative(sourceDir, filePath);
+  
+  // Always include files in the root directory
+  if (path.dirname(relativePath) === '.') {
+    return false;
+  }
+
   return excludeDirs.some(dir => 
     relativePath === dir || 
     relativePath.startsWith(dir + path.sep)
   ) || excludeFiles.some(file => 
     relativePath === file || 
-    relativePath.endsWith(path.sep + file)
+    relativePath.endsWith(path.sep + file) ||
+    relativePath.endsWith(file)
   );
 }
 

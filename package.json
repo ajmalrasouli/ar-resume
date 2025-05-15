@@ -1,7 +1,13 @@
 {
+  "name": "ar-resume",
+  "version": "1.0.0",
+  "description": "Ajmal Rasouli's Resume with AI Features",
   "scripts": {
     "dev": "vercel dev",
     "build": "node vercel-build.js",
     "start": "serve -s build"
+  },
+  "dependencies": {
+    "serve": "^14.2.1"
   }
 }
