@@ -17,15 +17,12 @@ jobs:
         with:
           submodules: true
       - name: Build And Deploy
-        id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_AMBITIOUS_ISLAND_0ADE2B403 }}
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           app_location: "/" 
-          api_location: ""
-          output_location: "build"  # This tells Azure where to find the built files
+          output_location: "build"
           skip_app_build: false
           skip_api_build: true
-          verbose: true
