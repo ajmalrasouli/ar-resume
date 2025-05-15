@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+module.exports = async function (context, req) {
     // Set CORS headers
     // Allow requests from any origin in development, replace with your domain in production
     const allowedOrigins = [
@@ -7,33 +7,43 @@ export default async function handler(req, res) {
         'https://lemon-desert-05dc5301e.6.azurestaticapps.net',
         'https://your-production-domain.azurestaticapps.net'
     ];
+    
     const origin = req.headers.origin;
     if (allowedOrigins.includes(origin)) {
-        res.setHeader('Access-Control-Allow-Origin', origin);
+        context.res.setHeader('Access-Control-Allow-Origin', origin);
     }
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    context.res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    context.res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     
     // Handle preflight requests
     if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+        return context.res = { status: 200 };
     }
     
     if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
+        return context.res = {
+            status: 405,
+            body: { error: 'Method not allowed' }
+        };
     }
 
     try {
         const { prompt, model = 'deepseek-coder', max_tokens = 500 } = req.body;
         
         if (!prompt) {
-            return res.status(400).json({ error: 'Prompt is required' });
+            return context.res = {
+                status: 400,
+                body: { error: 'Prompt is required' }
+            };
         }
 
         const apiKey = process.env.VITE_DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY;
         if (!apiKey) {
             console.error('DeepSeek API key is missing');
-            return res.status(500).json({ error: 'Server configuration error: Missing API key' });
+            return context.res = {
+                status: 500,
+                body: { error: 'Server configuration error: Missing API key' }
+            };
         }
 
         console.log('Sending request to DeepSeek API...');
@@ -73,11 +83,17 @@ export default async function handler(req, res) {
             throw new Error('Invalid response format from AI service');
         }
 
-        res.status(200).json(data);
+        context.res = {
+            status: 200,
+            body: data
+        };
     } catch (error) {
         console.error('API Handler Error:', error);
-        res.status(500).json({
-            error: error.message || 'An error occurred while processing your request'
-        });
+        context.res = {
+            status: 500,
+            body: {
+                error: error.message || 'An error occurred while processing your request'
+            }
+        };
     }
-}
+};
