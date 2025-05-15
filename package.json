@@ -4,12 +4,7 @@
   "description": "Ajmal Rasouli's Resume with AI Features",
   "scripts": {
     "dev": "vercel dev",
-    "build": "node vercel-build.js"
-  },
-  "dependencies": {
-    "@vercel/node": "^3.0.0"
-  },
-  "engines": {
-    "node": ">=14.x"
+    "build": "node vercel-build.js",
+    "start": "serve -s ."
   }
 }

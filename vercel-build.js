@@ -1,69 +1,52 @@
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
 
-const staticDir = path.join(__dirname, 'static');
-const vercelOutputDir = path.join(__dirname, '.vercel_build_output');
-const vercelStaticDir = path.join(vercelOutputDir, 'static');
+// Source and destination directories
+const sourceDir = process.cwd();
+const outputDir = path.join(process.cwd(), '.vercel_build_output', 'static');
 
-// Create directories if they don't exist
-[vercelOutputDir, vercelStaticDir].forEach(dir => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-});
+// Create output directory if it doesn't exist
+if (!fs.existsSync(outputDir)) {
+  fs.mkdirSync(outputDir, { recursive: true });
+}
 
-// Copy static files
+// Function to copy files
 function copyRecursiveSync(src, dest) {
-  if (fs.existsSync(src)) {
-    const stats = fs.statSync(src);
-    if (stats.isDirectory()) {
-      if (!fs.existsSync(dest)) {
-        fs.mkdirSync(dest, { recursive: true });
-      }
-      fs.readdirSync(src).forEach(childItem => {
+  const exists = fs.existsSync(src);
+  if (!exists) return;
+
+  const stats = fs.statSync(src);
+  if (stats.isDirectory()) {
+    if (!fs.existsSync(dest)) {
+      fs.mkdirSync(dest, { recursive: true });
+    }
+    fs.readdirSync(src).forEach(childItem => {
+      if (childItem !== 'node_modules' && childItem !== '.git') {
         copyRecursiveSync(
           path.join(src, childItem),
           path.join(dest, childItem)
         );
-      });
-    } else {
-      fs.copyFileSync(src, dest);
-    }
+      }
+    });
+  } else {
+    fs.copyFileSync(src, dest);
   }
-  // Silently skip if file doesn't exist
 }
 
-// Copy static directory if it exists
-if (fs.existsSync(staticDir)) {
-  copyRecursiveSync(staticDir, vercelStaticDir);
-}
+// Copy all files except node_modules and .git
+copyRecursiveSync(sourceDir, outputDir);
 
-// Copy individual files that should be in the root
-const filesToCopy = [
-  '.gitattributes',
-  'index.html',
-  '404.html',
-  'favicon.ico'
-];
+// Create vercel.json configuration
+const vercelConfig = {
+  version: 2,
+  buildCommand: 'npm run build',
+  outputDirectory: '.vercel_build_output/static'
+};
 
-filesToCopy.forEach(file => {
-  const src = path.join(__dirname, file);
-  const dest = path.join(vercelStaticDir, file);
-  if (fs.existsSync(src)) {
-    copyRecursiveSync(src, dest);
-  }
-});
+// Write vercel.json
+fs.writeFileSync(
+  path.join(process.cwd(), '.vercel_build_output', 'config.json'),
+  JSON.stringify(vercelConfig, null, 2)
+);
 
-// Create a basic config file if it doesn't exist
-const configPath = path.join(vercelOutputDir, 'config.json');
-if (!fs.existsSync(configPath)) {
-  fs.writeFileSync(
-    configPath,
-    JSON.stringify({
-      version: 2,
-      buildCommand: 'npm run build',
-      outputDirectory: '.vercel_build_output/static'
-    })
-  );
-}
+console.log('Build completed successfully!');
