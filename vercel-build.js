@@ -7,18 +7,18 @@ const outputDir = path.join(process.cwd(), 'build');
 
 // Create output directory if it doesn't exist
 if (fs.existsSync(outputDir)) {
-  // Remove existing build directory to avoid conflicts
   fs.rmSync(outputDir, { recursive: true, force: true });
 }
 fs.mkdirSync(outputDir, { recursive: true });
 
 // Files and directories to exclude
 const excludeDirs = ['node_modules', '.git', '.vercel', '.github', 'build', 'api'];
-const excludeFiles = ['.env', '.env.*', 'vercel-build.js', '*.md', '*.mdx', '*.log'];
+const excludeFiles = ['.env', 'vercel-build.js', '*.md', '*.mdx', '*.log'];
 
 // Function to check if a path should be excluded
 function shouldExclude(filePath) {
   const relativePath = path.relative(sourceDir, filePath);
+  const fileName = path.basename(filePath);
   
   // Always include files in the root directory
   if (path.dirname(relativePath) === '.') {
@@ -31,7 +31,7 @@ function shouldExclude(filePath) {
   ) || excludeFiles.some(file => 
     relativePath === file || 
     relativePath.endsWith(path.sep + file) ||
-    relativePath.endsWith(file)
+    fileName === file.replace('*', '')
   );
 }
 
@@ -60,5 +60,22 @@ console.log('Starting build...');
 
 // Copy all files except excluded ones
 copyRecursiveSync(sourceDir, outputDir);
+
+// Create a simple index.html if it doesn't exist
+const indexPath = path.join(outputDir, 'index.html');
+if (!fs.existsSync(indexPath)) {
+  fs.writeFileSync(indexPath, `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>My Resume</title>
+      </head>
+      <body>
+        <h1>Welcome to My Resume</h1>
+        <p>This is a placeholder. Your resume content will be served here.</p>
+      </body>
+    </html>
+  `);
+}
 
 console.log('Build completed successfully! Output directory:', outputDir);
