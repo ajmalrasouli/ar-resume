@@ -23,39 +23,59 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { prompt } = req.body;
-
-    if (!prompt) {
-        return res.status(400).json({ error: 'Prompt is required' });
-    }
-
     try {
+        const { prompt, model = 'deepseek-coder', max_tokens = 500 } = req.body;
+        
+        if (!prompt) {
+            return res.status(400).json({ error: 'Prompt is required' });
+        }
+
+        const apiKey = process.env.VITE_DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY;
+        if (!apiKey) {
+            console.error('DeepSeek API key is missing');
+            return res.status(500).json({ error: 'Server configuration error: Missing API key' });
+        }
+
+        console.log('Sending request to DeepSeek API...');
         const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.VITE_DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY}`
+                'Authorization': `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-                model: 'deepseek-coder',
+                model,
                 messages: [{
                     role: 'user',
                     content: `You are a helpful coding assistant. Please provide a clear explanation and example for: ${prompt}`
                 }],
-                max_tokens: 500,
+                max_tokens: parseInt(max_tokens, 10) || 500,
                 temperature: 0.7
             })
         });
 
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error?.message || 'Failed to fetch from DeepSeek API. Please check your API key and try again.');
+        const responseText = await response.text();
+        let data;
+        
+        try {
+            data = responseText ? JSON.parse(responseText) : null;
+        } catch (e) {
+            console.error('Failed to parse API response:', responseText);
+            throw new Error('Invalid response from AI service');
         }
 
-        const data = await response.json();
+        if (!response.ok) {
+            console.error('DeepSeek API error:', data);
+            throw new Error(data?.error?.message || `API request failed with status ${response.status}`);
+        }
+
+        if (!data || !data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+            throw new Error('Invalid response format from AI service');
+        }
+
         res.status(200).json(data);
     } catch (error) {
-        console.error('API Error:', error);
+        console.error('API Handler Error:', error);
         res.status(500).json({
             error: error.message || 'An error occurred while processing your request'
         });

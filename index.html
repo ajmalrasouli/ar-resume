@@ -676,23 +676,43 @@
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
-                            model: 'gpt-3.5-turbo',
                             messages: [{role: 'user', content: prompt}],
+                            model: 'gpt-3.5-turbo',
                             max_tokens: 500,
                             temperature: 0.7
                         })
                     });
 
-                    if (!response.ok) {
-                        const error = await response.json();
-                        throw new Error(error.error || 'Failed to generate text');
+                    
+                    let data;
+                    try {
+                        const responseText = await response.text();
+                        data = responseText ? JSON.parse(responseText) : null;
+                    } catch (e) {
+                        console.error('Failed to parse response:', e);
+                        throw new Error('Failed to process the response from the server');
                     }
 
-                    const data = await response.json();
-                    output.innerHTML = `<p>${data.choices[0].message.content}</p>`;
+                    if (!response.ok) {
+                        console.error('API Error:', data);
+                        throw new Error(data?.error || `Request failed with status ${response.status}`);
+                    }
+
+                    if (!data || !data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+                        throw new Error('Invalid response format from the server');
+                    }
+
+                    const content = data.choices[0].message.content;
+                    output.innerHTML = `<div class="p-3 bg-light rounded">${content.replace(/\n/g, '<br>')}</div>`;
                 } catch (error) {
-                    console.error('Error:', error);
-                    output.innerHTML = `<p class="text-danger">Error: ${error.message}. Please try again later.</p>`;
+                    console.error('Error in generateText:', error);
+                    output.innerHTML = `
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> ${error.message}
+                            <div class="mt-2 small">
+                                <p>If this issue persists, please try again later.</p>
+                            </div>
+                        </div>`;
                 }
             }
 
@@ -700,7 +720,6 @@
             async function getCodeHelp() {
                 const prompt = document.getElementById('codePrompt').value;
                 const output = document.getElementById('codeOutput');
-                const apiUrl = '/api/ai/code';
                 
                 if (!prompt.trim()) {
                     output.innerHTML = '<p class="text-danger">Please enter a coding question or paste some code</p>';
@@ -710,32 +729,49 @@
                 output.innerHTML = '<p class="text-muted">Getting help... <div class="spinner-border spinner-border-sm" role="status"></div></p>';
 
                 try {
-                    const response = await fetch(apiUrl, {
+                    const response = await fetch('/api/ai/code', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ prompt }),
-                        credentials: 'include'  // Important for CORS with credentials if needed
+                        body: JSON.stringify({
+                            prompt,
+                            model: 'deepseek-coder',
+                            max_tokens: 1000
+                        })
                     });
 
-                    const data = await response.json();
                     
+                    let data;
+                    try {
+                        const responseText = await response.text();
+                        data = responseText ? JSON.parse(responseText) : null;
+                    } catch (e) {
+                        console.error('Failed to parse response:', e);
+                        throw new Error('Failed to process the response from the server');
+                    }
+
                     if (!response.ok) {
-                        throw new Error(data.error || 'Failed to get response from API');
+                        console.error('API Error:', data);
+                        throw new Error(data?.error || `Request failed with status ${response.status}`);
                     }
-                    
-                    if (!data.choices?.[0]?.message?.content) {
-                        throw new Error('Invalid response format from API');
+
+                    if (!data || !data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+                        throw new Error('Invalid response format from the server');
                     }
-                    
+
                     const codeResponse = data.choices[0].message.content;
                     // Format the response with proper line breaks and code formatting
                     const formattedResponse = codeResponse
-                        .replace(/```(?:python\n)?([\s\S]*?)```/g, '<div class="bg-dark text-light p-3 rounded"><pre class="mb-0">$1</pre></div>')
-                        .replace(/\n/g, '<br>');
+                        .replace(/```(?:\w+\n)?([\s\S]*?)```/g, 
+                            (match, code) => 
+                                `<div class="bg-dark text-light p-3 rounded mb-3">
+                                    <pre class="mb-0 text-white-50">${code.trim()}</pre>
+                                </div>`
+                        )
+                        .replace(/\n(?!<\/?(div|pre|code)>)/g, '<br>');
                     
-                    output.innerHTML = formattedResponse;
+                    output.innerHTML = `<div class="bg-light p-3 rounded">${formattedResponse}</div>`;
                     
                 } catch (error) {
                     console.error('Error in getCodeHelp:', error);
@@ -744,6 +780,7 @@
                             <strong>Error:</strong> ${error.message}
                             <div class="mt-2 small">
                                 <p>If this issue persists, please try again later.</p>
+                                <p class="mb-0">Check the browser console for more details.</p>
                             </div>
                         </div>`;
                 }
