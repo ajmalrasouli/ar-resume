@@ -21,6 +21,22 @@
       }
     },
     {
+      "route": "/api/ai/chat",
+      "allowedRoles": ["anonymous"],
+      "methods": ["POST", "OPTIONS"],
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    {
+      "route": "/api/ai/code",
+      "allowedRoles": ["anonymous"],
+      "methods": ["POST", "OPTIONS"],
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    {
       "route": "/api/*",
       "allowedRoles": ["anonymous"],
       "headers": {
