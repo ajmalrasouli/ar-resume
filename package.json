@@ -8,6 +8,7 @@
     "start": "serve -s build"
   },
   "dependencies": {
+    "node-fetch": "^2.7.0",
     "serve": "^14.2.1"
   }
 }
