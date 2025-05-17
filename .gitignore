@@ -1,3 +1,5 @@
+# Ignore local Azure Functions settings
+api/local.settings.json
 # Dependencies
 node_modules/
 build/
@@ -7,7 +9,7 @@ build/
 *.env
 
 # Build output
-.vercel/
+
 
 # Logs
 *.log
