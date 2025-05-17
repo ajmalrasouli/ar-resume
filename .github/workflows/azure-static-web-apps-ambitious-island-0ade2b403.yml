@@ -25,4 +25,5 @@ jobs:
           output_location: "build"  # Must match the folder created by `npm run build`
           api_location: "api"       # For your Azure Function
           app_build_command: "npm install && npm run build"  # Explicit build command
+          action: "upload"
 
