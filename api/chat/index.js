@@ -45,7 +45,27 @@ module.exports = async function (context, req) {
             })
         });
 
-        const data = await response.json();
+        let data, text;
+        try {
+            text = await response.text();
+            data = text ? JSON.parse(text) : null;
+        } catch (e) {
+            data = { error: 'Failed to parse response', raw: text };
+        }
+
+        if (!response.ok) {
+            context.res = {
+                status: response.status,
+                body: {
+                    error: data?.error || data || 'Unknown error',
+                    status: response.status,
+                    statusText: response.statusText,
+                    raw: text
+                }
+            };
+            return;
+        }
+
         context.res = {
             status: response.status,
             body: data
@@ -53,7 +73,10 @@ module.exports = async function (context, req) {
     } catch (error) {
         context.res = {
             status: 500,
-            body: { error: error.message }
+            body: {
+                error: error.message,
+                stack: error.stack
+            }
         };
     }
 };
