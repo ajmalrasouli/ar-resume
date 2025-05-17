@@ -4,7 +4,7 @@
   "description": "Ajmal Rasouli's Resume with AI Features",
   "scripts": {
     "dev": "echo 'Use Azure Static Web Apps for local development'",
-    "build": "echo 'No Vercel build. Use Azure Static Web Apps build process'",
+    "build": "react-scripts build",
     "start": "serve -s build"
   },
   "dependencies": {
