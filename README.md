@@ -1,6 +1,8 @@
 # #CloudGuruChallenge: Your resume in Azure
 Here's what I came up with as a solution to the [Azure Resume Challenge](https://acloudguru.com/blog/engineering/cloudguruchallenge-your-resume-in-azure)
 
+
+
 View it live [here](https://lemon-desert-05dc5301e.6.azurestaticapps.net)
 
 
