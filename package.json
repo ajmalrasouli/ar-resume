@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "Ajmal Rasouli's Resume with AI Features",
   "scripts": {
-    "dev": "vercel dev",
-    "build": "node vercel-build.js",
+    "dev": "echo 'Use Azure Static Web Apps for local development'",
+    "build": "echo 'No Vercel build. Use Azure Static Web Apps build process'",
     "start": "serve -s build"
   },
   "dependencies": {

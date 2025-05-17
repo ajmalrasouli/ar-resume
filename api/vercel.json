@@ -1,9 +1,0 @@
-{
-  "version": 2,
-  "builds": [
-    { "src": "ai/*.js", "use": "@vercel/node" }
-  ],
-  "routes": [
-    { "src": "/ai/(.*)", "dest": "/ai/$1" }
-  ]
-}
