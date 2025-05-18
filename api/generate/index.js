@@ -1,51 +1,48 @@
-const OpenAI = require('openai');
+const fetch = require('node-fetch');
 
 module.exports = async function (context, req) {
-  // Set default CORS headers for all responses
-  const corsHeaders = {
+  // Set CORS headers
+  const headers = {
     "Access-Control-Allow-Origin": "https://lemon-desert-05dc5301e.6.azurestaticapps.net",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Vary": "Origin"
+    "Access-Control-Allow-Headers": "Content-Type"
   };
 
-  // Handle OPTIONS preflight requests
+  // Handle preflight requests
   if (req.method === "OPTIONS") {
-    context.res = {
-      status: 204, // No Content
-      headers: corsHeaders,
-      body: null
-    };
+    context.res = { status: 204, headers };
     return;
   }
 
-  // Process regular requests
   try {
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
-    });
-
-    const { messages, model = "gpt-3.5-turbo", max_tokens = 500, temperature = 0.7 } = req.body;
+    const { inputs } = req.body;
     
-    const completion = await openai.chat.completions.create({
-      model,
-      messages,
-      max_tokens,
-      temperature
-    });
+    const response = await fetch(
+      "https://api-inference.huggingface.co/models/google/flan-t5-xl", // Free model
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.HF_API_KEY}`
+        },
+        body: JSON.stringify({ inputs })
+      }
+    );
 
+    const data = await response.json();
+    
     context.res = {
       status: 200,
-      headers: corsHeaders,
-      body: completion
+      headers,
+      body: data
     };
   } catch (error) {
     context.res = {
       status: 500,
-      headers: corsHeaders,
-      body: {
+      headers,
+      body: { 
         error: error.message,
-        ...(error.response?.data ? { details: error.response.data } : {})
+        details: error.stack 
       }
     };
   }
