@@ -729,7 +729,7 @@
                 output.innerHTML = '<p class="text-muted">Getting help... <div class="spinner-border spinner-border-sm" role="status"></div></p>';
 
                 try {
-                    const response = await fetch('/api/code', {
+                    const response = await fetch('/api/generate', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
