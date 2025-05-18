@@ -32,9 +32,9 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LEMON_DESERT_05DC5301E }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          app_location: "/"
+          app_location: "api"
           output_location: "build"
           api_location: "api"
           app_build_command: "npm install && npm run build"
-          api_build_command: "npm install"  # Ensures dependencies are installed
+          api_build_command: "npm install --prefix api"  # Explicitly install dependencies
           action: "upload"
