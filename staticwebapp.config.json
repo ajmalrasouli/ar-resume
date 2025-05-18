@@ -10,7 +10,24 @@
       "methods": ["GET", "POST", "OPTIONS"]
     }
   ],
-  "mimeTypes": {
-    ".json": "text/json"
+  "responseOverrides": {
+    "400": {
+      "statusCode": 400,
+      "headers": {
+        "Access-Control-Allow-Origin": "*"
+      }
+    },
+    "401": {
+      "statusCode": 401,
+      "headers": {
+        "Access-Control-Allow-Origin": "*"
+      }
+    },
+    "404": {
+      "statusCode": 404,
+      "headers": {
+        "Access-Control-Allow-Origin": "*"
+      }
+    }
   }
 }
