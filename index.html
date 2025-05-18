@@ -670,7 +670,7 @@
                 output.innerHTML = '<p class="text-muted">Generating... <div class="spinner-border spinner-border-sm" role="status"></div></p>';
 
                 try {
-                    const response = await fetch('/api/chat', {
+                    const response = await fetch('/api/generate', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'

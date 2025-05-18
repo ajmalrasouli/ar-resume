@@ -1,6 +1,7 @@
 {
   "name": "api",
   "dependencies": {
-    "node-fetch": "^3.3.2"
+    "dotenv": "^16.5.0",
+    "node-fetch": "^2.7.0"
   }
 }
