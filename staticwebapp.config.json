@@ -5,36 +5,11 @@
   },
   "routes": [
     {
-      "route": "/api/generate",
-      "allowedRoles": ["anonymous"],
-      "methods": ["POST", "OPTIONS"]
-    },
-    {
       "route": "/api/*",
       "allowedRoles": ["anonymous"],
-      "methods": ["OPTIONS"]
+      "methods": ["GET", "POST", "OPTIONS"]
     }
   ],
-  "responseOverrides": {
-    "400": {
-      "statusCode": 400,
-      "headers": {
-        "Access-Control-Allow-Origin": "*"
-      }
-    },
-    "401": {
-      "statusCode": 401,
-      "headers": {
-        "Access-Control-Allow-Origin": "*"
-      }
-    },
-    "404": {
-      "statusCode": 404,
-      "headers": {
-        "Access-Control-Allow-Origin": "*"
-      }
-    }
-  },
   "mimeTypes": {
     ".json": "text/json"
   }
