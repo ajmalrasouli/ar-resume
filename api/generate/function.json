@@ -6,7 +6,7 @@
       "direction": "in",
       "name": "req",
       "methods": ["post", "options"],
-      "route": "api/generate"  // Added explicit route
+      "route": "api/generate"
     },
     {
       "type": "http",

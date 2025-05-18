@@ -1,20 +1,22 @@
 const OpenAI = require('openai');
 
 module.exports = async function (context, req) {
-  // Handle CORS preflight
+  // Set CORS headers for all responses
+  context.res = {
+    headers: {
+      "Access-Control-Allow-Origin": "https://lemon-desert-05dc5301e.6.azurestaticapps.net",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+      "Content-Type": "application/json"
+    }
+  };
+
+  // Handle preflight
   if (req.method === "OPTIONS") {
-    context.res = {
-      status: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type"
-      }
-    };
-    return;
+    return context.done();
   }
 
-  // Initialize OpenAI
+  // Main logic
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
   });
@@ -30,11 +32,13 @@ module.exports = async function (context, req) {
     });
 
     context.res = {
+      ...context.res,
       status: 200,
       body: completion
     };
   } catch (error) {
     context.res = {
+      ...context.res,
       status: 500,
       body: {
         error: error.message,
