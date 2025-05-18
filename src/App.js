@@ -15,7 +15,7 @@ function App() {
     }
     setAiOutput(<p className="text-muted">Generating... <span className="spinner-border spinner-border-sm" role="status"></span></p>);
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -60,7 +60,7 @@ function App() {
     }
     setCodeOutput(<p className="text-muted">Getting help... <span className="spinner-border spinner-border-sm" role="status"></span></p>);
     try {
-      const response = await fetch('/api/code', {
+      const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
