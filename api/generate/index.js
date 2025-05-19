@@ -53,25 +53,56 @@ module.exports = async function (context, req) {
     let modelUsed = '';
 
     if (isGeneralChat) {
-      // Use a text generation model for general chat
-      modelUsed = 'gpt2';
-      response = await fetch(
-        "https://api-inference.huggingface.co/models/gpt2",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${process.env.HF_API_KEY}`
-          },
-          body: JSON.stringify({
-            inputs: inputs,
-            parameters: {
-              max_length: 100,
-              temperature: 0.7
+      // Try different chat models in sequence if one fails
+      const chatModels = [
+        'gpt2',
+        'EleutherAI/gpt-neo-1.3B',
+        'facebook/opt-350m'
+      ];
+      
+      let lastError;
+      
+      for (const model of chatModels) {
+        modelUsed = model;
+        try {
+          const modelResponse = await fetch(
+            `https://api-inference.huggingface.co/models/${model}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${process.env.HF_API_KEY}`
+              },
+              body: JSON.stringify({
+                inputs: inputs,
+                parameters: {
+                  max_length: 100,
+                  temperature: 0.7,
+                  return_full_text: false
+                }
+              })
             }
-          })
+          );
+          
+          if (modelResponse.ok) {
+            response = modelResponse;
+            break;
+          }
+          
+          const errorData = await modelResponse.text();
+          lastError = new Error(`Model ${model} returned ${modelResponse.status}: ${errorData}`);
+          context.log.warn(`Chat model ${model} failed:`, lastError.message);
+          
+        } catch (error) {
+          lastError = error;
+          context.log.warn(`Error with model ${model}:`, error.message);
+          continue;
         }
-      );
+      }
+      
+      if (!response) {
+        throw lastError || new Error('All chat models failed');
+      }
     } else {
       // Use Q&A model for specific questions
       modelUsed = 'deepset/roberta-base-squad2';
@@ -123,18 +154,35 @@ module.exports = async function (context, req) {
     }
 
     // Parse successful response
-    let data = await response.json();
     let responseBody;
     
-    // Format response based on model used
-    if (isGeneralChat) {
-      // For chat model, return the generated text
-      responseBody = {
-        response: data[0]?.generated_text || "I'm sorry, I couldn't generate a response.",
-        type: 'chat',
-        model: modelUsed
-      };
-    } else {
+    try {
+      const data = await response.json();
+      
+      // Format response based on model used
+      if (isGeneralChat) {
+        // For chat model, clean up the response
+        let generatedText = '';
+        if (Array.isArray(data) && data[0]?.generated_text) {
+          generatedText = data[0].generated_text;
+        } else if (typeof data === 'object' && data.generated_text) {
+          generatedText = data.generated_text;
+        } else if (typeof data === 'string') {
+          generatedText = data;
+        }
+        
+        // Clean up the response text
+        generatedText = generatedText
+          .replace(/^\s*\n+/, '') // Remove leading newlines
+          .replace(/\n+/g, ' ')     // Replace multiple newlines with space
+          .trim();
+          
+        responseBody = {
+          response: generatedText || "I'm sorry, I couldn't generate a response.",
+          type: 'chat',
+          model: modelUsed
+        };
+      } else {
       // For Q&A model, check confidence score
       const MIN_CONFIDENCE = 0.1; // Minimum confidence score to trust the Q&A answer
       
@@ -184,6 +232,14 @@ module.exports = async function (context, req) {
           model: modelUsed
         };
       }
+    }
+    } catch (error) {
+      context.log.error('Error parsing response:', error);
+      responseBody = {
+        response: "I'm sorry, I encountered an error processing your request.",
+        type: 'error',
+        error: error.message
+      };
     }
     
     context.res = {
