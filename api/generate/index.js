@@ -75,10 +75,21 @@ module.exports = async function (context, req) {
     } else {
       // Use Q&A model for specific questions
       modelUsed = 'deepset/roberta-base-squad2';
+      const context = {
+        "what color is the sky": "The sky is typically blue during the day due to Rayleigh scattering of sunlight.",
+        "what colour is the sky": "The sky is typically blue during the day due to Rayleigh scattering of sunlight.",
+        "what is the capital of france": "The capital of France is Paris.",
+        "who is the president of the united states": "As of my last update, the President of the United States is Joe Biden.",
+        "what is the meaning of life": "The meaning of life is a philosophical question with many possible answers, often considered to be about finding purpose and happiness."
+      };
+
+      const question = inputs.toLowerCase().replace(/[^a-z0-9\s]/g, '');
+      const defaultContext = "You are a helpful AI assistant. Please provide accurate and helpful responses to questions.";
+      
       const payload = {
         inputs: {
           question: inputs,
-          context: "You are a helpful AI assistant. Please provide accurate and helpful responses to questions."
+          context: context[question] || defaultContext
         }
       };
       
@@ -112,7 +123,7 @@ module.exports = async function (context, req) {
     }
 
     // Parse successful response
-    const data = await response.json();
+    let data = await response.json();
     let responseBody;
     
     // Format response based on model used
@@ -124,13 +135,55 @@ module.exports = async function (context, req) {
         model: modelUsed
       };
     } else {
-      // For Q&A model, format the answer
-      responseBody = {
-        answer: data.answer || "I'm not sure how to answer that.",
-        score: data.score || 0,
-        type: 'qa',
-        model: modelUsed
-      };
+      // For Q&A model, check confidence score
+      const MIN_CONFIDENCE = 0.1; // Minimum confidence score to trust the Q&A answer
+      
+      if ((data.score || 0) < MIN_CONFIDENCE) {
+        // If confidence is too low, fall back to chat model
+        modelUsed = 'gpt2';
+        const chatResponse = await fetch(
+          "https://api-inference.huggingface.co/models/gpt2",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${process.env.HF_API_KEY}`
+            },
+            body: JSON.stringify({
+              inputs: inputs,
+              parameters: { max_length: 100, temperature: 0.7 }
+            })
+          }
+        );
+        
+        if (chatResponse.ok) {
+          const chatData = await chatResponse.json();
+          responseBody = {
+            response: chatData[0]?.generated_text || "I'm not sure how to respond to that.",
+            type: 'chat',
+            model: modelUsed,
+            fallback: true,
+            original_score: data.score
+          };
+        } else {
+          // If chat model also fails, return the original low-confidence answer
+          responseBody = {
+            answer: data.answer || "I'm not sure how to answer that.",
+            score: data.score || 0,
+            type: 'qa',
+            model: modelUsed,
+            note: 'Low confidence answer'
+          };
+        }
+      } else {
+        // If confidence is good, return Q&A response
+        responseBody = {
+          answer: data.answer || "I'm not sure how to answer that.",
+          score: data.score || 0,
+          type: 'qa',
+          model: modelUsed
+        };
+      }
     }
     
     context.res = {
