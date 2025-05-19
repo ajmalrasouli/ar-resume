@@ -7,7 +7,7 @@ const AIProjects = ({ aiPrompt, setAiPrompt, aiOutput, generateText, codePrompt,
       <div className="card mb-4">
         <div className="card-body">
           <h3 className="card-title">AI Text Generator</h3>
-          <p className="card-text">Try out this AI-powered text generator using OpenAI's API. It can help with writing, coding, and more!</p>
+          <p className="card-text">Try out this AI-powered text generator using Hugging Face's API. It can help with writing, coding, and more!</p>
           <div className="mb-3">
             <textarea className="form-control mb-2" id="aiPrompt" rows={3} placeholder="Enter your prompt here..." value={aiPrompt} onChange={e => setAiPrompt(e.target.value)} />
             <button className="btn btn-primary" onClick={generateText}>Generate</button>
