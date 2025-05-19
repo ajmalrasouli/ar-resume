@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import './css/styles.css';
 
 function App() {
   // State for AI and Code Assistant
@@ -9,43 +10,48 @@ function App() {
 
   // Handlers for AI Text Generation
   async function generateText() {
-  if (!aiPrompt.trim()) {
-    setAiOutput(<p className="text-danger">Please enter a prompt</p>);
-    return;
-  }
-  setAiOutput(<p className="text-muted">Generating... <span className="spinner-border spinner-border-sm" role="status"></span></p>);
-  try {
-    const response = await fetch('/api/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        inputs: aiPrompt // <-- This is what your backend expects
-      })
-    });
-    let data;
+    if (!aiPrompt.trim()) {
+      setAiOutput(<p className="text-danger">Please enter a prompt</p>);
+      return;
+    }
+    setAiOutput(<p className="text-muted">Generating... <span className="spinner-border spinner-border-sm" role="status"></span></p>);
     try {
-      const responseText = await response.text();
-      data = responseText ? JSON.parse(responseText) : null;
-    } catch (e) {
-      throw new Error('Failed to process the response from the server');
-    }
-    if (!response.ok) {
-      throw new Error(data?.error || `Request failed with status ${response.status}`);
-    }
-    // Hugging Face returns an array of summaries
-    const content = Array.isArray(data) && data[0]?.summary_text ? data[0].summary_text : JSON.stringify(data);
-    setAiOutput(<div className="p-3 bg-light rounded">{content}</div>);
-  } catch (error) {
-    setAiOutput(
-      <div className="alert alert-danger">
-        <strong>Error:</strong> {error.message}
-        <div className="mt-2 small">
-          <p>If this issue persists, please try again later.</p>
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          inputs: aiPrompt // <-- This is what your backend expects
+        })
+      });
+      let data;
+      try {
+        const responseText = await response.text();
+        data = responseText ? JSON.parse(responseText) : null;
+      } catch (e) {
+        throw new Error('Failed to process the response from the server');
+      }
+      if (!response.ok) {
+        throw new Error(data?.error || `Request failed with status ${response.status}`);
+      }
+      // Hugging Face returns an array of summaries
+      const content = Array.isArray(data) && data[0]?.summary_text ? data[0].summary_text : JSON.stringify(data);
+      setAiOutput(<div className="p-3 bg-light rounded">{content}</div>);
+    } catch (error) {
+      setAiOutput(
+        <div className="alert alert-danger">
+          <strong>Error:</strong> {error.message}
+          <div className="mt-2 small">
+            <p>If this issue persists, please try again later.</p>
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
   }
-}
+
+  // Stub for Code Assistant (prevents ReferenceError)
+  function getCodeHelp() {
+    setCodeOutput(<p className="text-danger">Code Assistant is not implemented yet.</p>);
+  }
 
   // Helper for asset paths (since CRA expects assets in public/)
   const asset = (path) => process.env.PUBLIC_URL + '/' + path;
@@ -307,18 +313,6 @@ function App() {
                 </div>
               </div>
             </div>
-          </div>
-        </section>
-        <hr className="m-0" style={{height: '3px', backgroundColor: '#bd5d38', opacity: 0.8, margin: '3rem 0', border: 'none'}} />
-
-        {/* Interests Section */}
-        <section className="resume-section" id="interests">
-          <div className="resume-section-content">
-            <h2 className="mb-5">Interests</h2>
-            <p>Volunteering to build and fix computers and laptops of friends and family members.</p>
-            <p>In my spare time, I enjoy meeting up with my friends and family.</p>
-            <p>I spend a large amount of my free time exploring the latest technology advancements in the cloud world.</p>
-            <p>Playing individual sports (running, swimming).</p>
           </div>
         </section>
         <hr className="m-0" style={{height: '3px', backgroundColor: '#bd5d38', opacity: 0.8, margin: '3rem 0', border: 'none'}} />
