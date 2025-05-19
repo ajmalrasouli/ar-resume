@@ -8,6 +8,45 @@ function App() {
   const [codePrompt, setCodePrompt] = useState("");
   const [codeOutput, setCodeOutput] = useState(<p className="text-muted mb-0">Code assistance will appear here...</p>);
 
+  // Ensure the AI and Code Assistant sections are visible
+  async function getCodeHelp() {
+  if (!codePrompt.trim()) {
+    setCodeOutput(<p className="text-danger">Please enter a coding question or code snippet.</p>);
+    return;
+  }
+  setCodeOutput(<p className="text-muted">Generating... <span className="spinner-border spinner-border-sm" role="status"></span></p>);
+  try {
+    const response = await fetch('/api/code-assist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        inputs: codePrompt // <-- This is what your backend expects
+      })
+    });
+    let data;
+    try {
+      const responseText = await response.text();
+      data = responseText ? JSON.parse(responseText) : null;
+    } catch (e) {
+      throw new Error('Failed to process the response from the server');
+    }
+    if (!response.ok) {
+      throw new Error(data?.error || `Request failed with status ${response.status}`);
+    }
+    // Hugging Face returns an array of results
+    const content = Array.isArray(data) && data[0]?.generated_text ? data[0].generated_text : JSON.stringify(data);
+    setCodeOutput(<div className="p-3 bg-light rounded">{content}</div>);
+  } catch (error) {
+    setCodeOutput(
+      <div className="alert alert-danger">
+        <strong>Error:</strong> {error.message}
+        <div className="mt-2 small">
+          <p>If this issue persists, please try again later.</p>
+        </div>
+      </div>
+    );
+  }
+}
   // Handlers for AI Text Generation
   async function generateText() {
     if (!aiPrompt.trim()) {
@@ -48,10 +87,7 @@ function App() {
     }
   }
 
-  // Stub for Code Assistant (prevents ReferenceError)
-  function getCodeHelp() {
-    setCodeOutput(<p className="text-danger">Code Assistant is not implemented yet.</p>);
-  }
+
 
   // Helper for asset paths (since CRA expects assets in public/)
   const asset = (path) => process.env.PUBLIC_URL + '/' + path;
