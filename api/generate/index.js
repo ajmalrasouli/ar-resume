@@ -46,28 +46,54 @@ module.exports = async function (context, req) {
       return;
     }
 
-    // Prepare the question and context for Q&A
-    // Assuming inputs is the question, you might want to also include context
-    // For now, we'll use a simple format with just the question
-    const payload = {
-      inputs: {
-        question: inputs,
-        context: "" // You can provide relevant context here if available
-      }
-    };
+    // Determine if the input is a general chat or a specific question
+    const isGeneralChat = !inputs.endsWith('?') && !inputs.toLowerCase().startsWith('what') && !inputs.toLowerCase().startsWith('who') && !inputs.toLowerCase().startsWith('when') && !inputs.toLowerCase().startsWith('where') && !inputs.toLowerCase().startsWith('why') && !inputs.toLowerCase().startsWith('how');
+    
+    let response;
+    let modelUsed = '';
 
-    // Make request to Hugging Face Q&A model
-    const response = await fetch(
-      "https://api-inference.huggingface.co/models/deepset/roberta-base-squad2",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.HF_API_KEY}`
-        },
-        body: JSON.stringify(payload)
-      }
-    );
+    if (isGeneralChat) {
+      // Use a text generation model for general chat
+      modelUsed = 'gpt2';
+      response = await fetch(
+        "https://api-inference.huggingface.co/models/gpt2",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${process.env.HF_API_KEY}`
+          },
+          body: JSON.stringify({
+            inputs: inputs,
+            parameters: {
+              max_length: 100,
+              temperature: 0.7
+            }
+          })
+        }
+      );
+    } else {
+      // Use Q&A model for specific questions
+      modelUsed = 'deepset/roberta-base-squad2';
+      const payload = {
+        inputs: {
+          question: inputs,
+          context: "You are a helpful AI assistant. Please provide accurate and helpful responses to questions."
+        }
+      };
+      
+      response = await fetch(
+        `https://api-inference.huggingface.co/models/${modelUsed}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${process.env.HF_API_KEY}`
+          },
+          body: JSON.stringify(payload)
+        }
+      );
+    }
 
     // Check if the response is ok before trying to parse
     if (!response.ok) {
@@ -87,11 +113,30 @@ module.exports = async function (context, req) {
 
     // Parse successful response
     const data = await response.json();
+    let responseBody;
+    
+    // Format response based on model used
+    if (isGeneralChat) {
+      // For chat model, return the generated text
+      responseBody = {
+        response: data[0]?.generated_text || "I'm sorry, I couldn't generate a response.",
+        type: 'chat',
+        model: modelUsed
+      };
+    } else {
+      // For Q&A model, format the answer
+      responseBody = {
+        answer: data.answer || "I'm not sure how to answer that.",
+        score: data.score || 0,
+        type: 'qa',
+        model: modelUsed
+      };
+    }
     
     context.res = {
       status: 200,
       headers: corsHeaders,
-      body: JSON.stringify(data)
+      body: JSON.stringify(responseBody)
     };
   } catch (error) {
     // Log the full error for debugging
