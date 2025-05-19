@@ -55,9 +55,9 @@ module.exports = async function (context, req) {
     if (isGeneralChat) {
       // Try different chat models in sequence if one fails
       const chatModels = [
-        'gpt2',
-        'EleutherAI/gpt-neo-1.3B',
-        'facebook/opt-350m'
+        'gpt2',  // Basic model, usually available
+        'distilgpt2',  // Smaller, faster version of GPT-2
+        'microsoft/DialoGPT-small'  // Specifically designed for dialogue
       ];
       
       let lastError;
@@ -101,7 +101,14 @@ module.exports = async function (context, req) {
       }
       
       if (!response) {
-        throw lastError || new Error('All chat models failed');
+        context.log.warn('All chat models failed, using fallback response');
+        // Provide a simple fallback response
+        response = {
+          ok: true,
+          json: async () => [{
+            generated_text: "Why don't scientists trust atoms? Because they make up everything! (This is a fallback response since all AI models are currently unavailable.)"
+          }]
+        };
       }
     } else {
       // Use Q&A model for specific questions
