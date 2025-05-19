@@ -55,23 +55,46 @@ module.exports = async function (context, req) {
     if (isGeneralChat) {
       // Try different chat models in sequence if one fails
       const chatModels = [
-        'gpt2',  // Basic model, usually available
-        'distilgpt2',  // Smaller, faster version of GPT-2
-        'microsoft/DialoGPT-small'  // Specifically designed for dialogue
+        { id: 'gpt2', name: 'GPT-2' },
+        { id: 'distilgpt2', name: 'DistilGPT-2' },
+        { id: 'microsoft/DialoGPT-small', name: 'DialoGPT' },
+        { id: 'facebook/opt-350m', name: 'OPT-350M' }
       ];
       
       let lastError;
+      let lastStatus;
       
+      // First, check if the API key is valid by making a simple request
+      try {
+        const testResponse = await fetch('https://huggingface.co/api/whoami-v2', {
+          headers: { 'Authorization': `Bearer ${process.env.HF_API_KEY}` }
+        });
+        
+        if (!testResponse.ok) {
+          context.log.warn('Hugging Face API key validation failed:', await testResponse.text());
+        } else {
+          const userInfo = await testResponse.json();
+          context.log.info(`Connected to Hugging Face as: ${userInfo.name || 'API User'}`);
+        }
+      } catch (error) {
+        context.log.warn('Could not verify Hugging Face API key:', error.message);
+      }
+      
+      // Try each model
       for (const model of chatModels) {
-        modelUsed = model;
+        modelUsed = model.id;
+        context.log.info(`Trying model: ${model.name} (${model.id})`);
+        
         try {
+          const startTime = Date.now();
           const modelResponse = await fetch(
-            `https://api-inference.huggingface.co/models/${model}`,
+            `https://api-inference.huggingface.co/models/${model.id}`,
             {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${process.env.HF_API_KEY}`
+                "Authorization": `Bearer ${process.env.HF_API_KEY}`,
+                "X-Wait-For-Model": "true"  // Wait if model is loading
               },
               body: JSON.stringify({
                 inputs: inputs,
@@ -84,29 +107,44 @@ module.exports = async function (context, req) {
             }
           );
           
+          const responseTime = Date.now() - startTime;
+          lastStatus = modelResponse.status;
+          
           if (modelResponse.ok) {
+            context.log.info(`Model ${model.name} responded successfully in ${responseTime}ms`);
             response = modelResponse;
             break;
           }
           
           const errorData = await modelResponse.text();
-          lastError = new Error(`Model ${model} returned ${modelResponse.status}: ${errorData}`);
-          context.log.warn(`Chat model ${model} failed:`, lastError.message);
+          lastError = new Error(`Model ${model.name} (${model.id}) returned ${modelResponse.status}: ${errorData}`);
+          context.log.warn(`Chat model ${model.name} failed in ${responseTime}ms:`, lastError.message);
           
         } catch (error) {
           lastError = error;
-          context.log.warn(`Error with model ${model}:`, error.message);
+          context.log.warn(`Error with model ${model.name}:`, error.message);
           continue;
         }
       }
       
       if (!response) {
         context.log.warn('All chat models failed, using fallback response');
-        // Provide a simple fallback response
+        const fallbackJokes = [
+          "Why don't scientists trust atoms? Because they make up everything!",
+          "Did you hear about the mathematician who's afraid of negative numbers? He'll stop at nothing to avoid them!",
+          "Why don't eggs tell jokes? They'd crack each other up!",
+          "I told my wife she was drawing her eyebrows too high. She looked surprised.",
+          "What's the best thing about Switzerland? I don't know, but the flag is a big plus!"
+        ];
+        
+        const randomJoke = fallbackJokes[Math.floor(Math.random() * fallbackJokes.length)];
+        const errorMessage = lastError ? ` (Error: ${lastError.message.split(':')[0]})` : '';
+        
+        // Provide a fallback response
         response = {
           ok: true,
           json: async () => [{
-            generated_text: "Why don't scientists trust atoms? Because they make up everything! (This is a fallback response since all AI models are currently unavailable.)"
+            generated_text: `${randomJoke} (This is a fallback response since all AI models are currently unavailable.${errorMessage})`
           }]
         };
       }
