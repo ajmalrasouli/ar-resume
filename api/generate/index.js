@@ -53,13 +53,30 @@ module.exports = async function (context, req) {
     let modelUsed = '';
 
     if (isGeneralChat) {
-      // Try different chat models in sequence if one fails
+      // Use models that are available in the free tier
       const chatModels = [
-        { id: 'gpt2', name: 'GPT-2' },
-        { id: 'distilgpt2', name: 'DistilGPT-2' },
-        { id: 'microsoft/DialoGPT-small', name: 'DialoGPT' },
-        { id: 'facebook/opt-350m', name: 'OPT-350M' }
+        { 
+          id: 'gpt2', 
+          name: 'GPT-2',
+          endpoint: 'https://api-inference.huggingface.co/models/gpt2',
+          isAvailable: true
+        },
+        { 
+          id: 'distilgpt2', 
+          name: 'DistilGPT-2',
+          endpoint: 'https://api-inference.huggingface.co/models/distilgpt2',
+          isAvailable: true
+        },
+        {
+          id: 'bigscience/bloom-560m',
+          name: 'BLOOM 560M',
+          endpoint: 'https://api-inference.huggingface.co/models/bigscience/bloom-560m',
+          isAvailable: true
+        }
       ];
+      
+      // Filter to only available models
+      const availableModels = chatModels.filter(model => model.isAvailable);
       
       let lastError;
       let lastStatus;
@@ -80,15 +97,20 @@ module.exports = async function (context, req) {
         context.log.warn('Could not verify Hugging Face API key:', error.message);
       }
       
-      // Try each model
-      for (const model of chatModels) {
+      // If no models are available, use fallback immediately
+      if (availableModels.length === 0) {
+        throw new Error('No available models found');
+      }
+      
+      // Try each available model
+      for (const model of availableModels) {
         modelUsed = model.id;
         context.log.info(`Trying model: ${model.name} (${model.id})`);
         
         try {
           const startTime = Date.now();
           const modelResponse = await fetch(
-            `https://api-inference.huggingface.co/models/${model.id}`,
+            model.endpoint,
             {
               method: "POST",
               headers: {
@@ -111,9 +133,18 @@ module.exports = async function (context, req) {
           lastStatus = modelResponse.status;
           
           if (modelResponse.ok) {
-            context.log.info(`Model ${model.name} responded successfully in ${responseTime}ms`);
-            response = modelResponse;
-            break;
+            const responseData = await modelResponse.json();
+            // Check if we got a valid response
+            if (responseData && Array.isArray(responseData) && responseData.length > 0) {
+              context.log.info(`Model ${model.name} responded successfully in ${responseTime}ms`);
+              response = {
+                ok: true,
+                json: async () => responseData
+              };
+              break;
+            } else {
+              throw new Error('Empty or invalid response from model');
+            }
           }
           
           const errorData = await modelResponse.text();
