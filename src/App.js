@@ -9,100 +9,43 @@ function App() {
 
   // Handlers for AI Text Generation
   async function generateText() {
-    if (!aiPrompt.trim()) {
-      setAiOutput(<p className="text-danger">Please enter a prompt</p>);
-      return;
-    }
-    setAiOutput(<p className="text-muted">Generating... <span className="spinner-border spinner-border-sm" role="status"></span></p>);
-    try {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: aiPrompt }],
-          model: 'gpt-3.5-turbo',
-          max_tokens: 500,
-          temperature: 0.7
-        })
-      });
-      let data;
-      try {
-        const responseText = await response.text();
-        data = responseText ? JSON.parse(responseText) : null;
-      } catch (e) {
-        throw new Error('Failed to process the response from the server');
-      }
-      if (!response.ok) {
-        throw new Error(data?.error || `Request failed with status ${response.status}`);
-      }
-      if (!data || !data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
-        throw new Error('Invalid response format from the server');
-      }
-      const content = data.choices[0].message.content;
-      setAiOutput(<div className="p-3 bg-light rounded" dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br>') }} />);
-    } catch (error) {
-      setAiOutput(
-        <div className="alert alert-danger">
-          <strong>Error:</strong> {error.message}
-          <div className="mt-2 small">
-            <p>If this issue persists, please try again later.</p>
-          </div>
-        </div>
-      );
-    }
+  if (!aiPrompt.trim()) {
+    setAiOutput(<p className="text-danger">Please enter a prompt</p>);
+    return;
   }
-
-  // Handlers for Code Assistant
-  async function getCodeHelp() {
-    if (!codePrompt.trim()) {
-      setCodeOutput(<p className="text-danger">Please enter a coding question or paste some code</p>);
-      return;
-    }
-    setCodeOutput(<p className="text-muted">Getting help... <span className="spinner-border spinner-border-sm" role="status"></span></p>);
+  setAiOutput(<p className="text-muted">Generating... <span className="spinner-border spinner-border-sm" role="status"></span></p>);
+  try {
+    const response = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        inputs: aiPrompt // <-- This is what your backend expects
+      })
+    });
+    let data;
     try {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: codePrompt,
-          model: 'deepseek-coder',
-          max_tokens: 1000
-        })
-      });
-      let data;
-      try {
-        const responseText = await response.text();
-        data = responseText ? JSON.parse(responseText) : null;
-      } catch (e) {
-        throw new Error('Failed to process the response from the server');
-      }
-      if (!response.ok) {
-        throw new Error(data?.error || `Request failed with status ${response.status}`);
-      }
-      if (!data || !data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
-        throw new Error('Invalid response format from the server');
-      }
-      const codeResponse = data.choices[0].message.content;
-      // Format the response with proper line breaks and code formatting
-      const formattedResponse = codeResponse
-        .replace(/```(?:\w+\n)?([\s\S]*?)```/g, 
-          (match, code) => 
-            `<div class='bg-dark text-light p-3 rounded mb-3'><pre class='mb-0 text-white-50'>${code.trim()}</pre></div>`
-        )
-        .replace(/\n(?!<\/?(div|pre|code)>)/g, '<br>');
-      setCodeOutput(<div className="bg-light p-3 rounded" dangerouslySetInnerHTML={{ __html: formattedResponse }} />);
-    } catch (error) {
-      setCodeOutput(
-        <div className="alert alert-danger">
-          <strong>Error:</strong> {error.message}
-          <div className="mt-2 small">
-            <p>If this issue persists, please try again later.</p>
-            <p className="mb-0">Check the browser console for more details.</p>
-          </div>
-        </div>
-      );
+      const responseText = await response.text();
+      data = responseText ? JSON.parse(responseText) : null;
+    } catch (e) {
+      throw new Error('Failed to process the response from the server');
     }
+    if (!response.ok) {
+      throw new Error(data?.error || `Request failed with status ${response.status}`);
+    }
+    // Hugging Face returns an array of summaries
+    const content = Array.isArray(data) && data[0]?.summary_text ? data[0].summary_text : JSON.stringify(data);
+    setAiOutput(<div className="p-3 bg-light rounded">{content}</div>);
+  } catch (error) {
+    setAiOutput(
+      <div className="alert alert-danger">
+        <strong>Error:</strong> {error.message}
+        <div className="mt-2 small">
+          <p>If this issue persists, please try again later.</p>
+        </div>
+      </div>
+    );
   }
+}
 
   // Helper for asset paths (since CRA expects assets in public/)
   const asset = (path) => process.env.PUBLIC_URL + '/' + path;
