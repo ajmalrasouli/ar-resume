@@ -46,16 +46,26 @@ module.exports = async function (context, req) {
       return;
     }
 
-    // Make request to Hugging Face
+    // Prepare the question and context for Q&A
+    // Assuming inputs is the question, you might want to also include context
+    // For now, we'll use a simple format with just the question
+    const payload = {
+      inputs: {
+        question: inputs,
+        context: "" // You can provide relevant context here if available
+      }
+    };
+
+    // Make request to Hugging Face Q&A model
     const response = await fetch(
-      "https://api-inference.huggingface.co/models/facebook/bart-large-cnn",
+      "https://api-inference.huggingface.co/models/deepset/roberta-base-squad2",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${process.env.HF_API_KEY}`
         },
-        body: JSON.stringify({ inputs })
+        body: JSON.stringify(payload)
       }
     );
 
