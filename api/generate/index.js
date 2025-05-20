@@ -27,6 +27,7 @@ module.exports = async function (context, req) {
   try {
     // --- API Key Validation (whoami-v2 check) ---
     const apiKey = process.env.HF_API_KEY;
+    context.log.info(`[AZURE FUNCTION KEY CHECK] HF_API_KEY from Azure env: ${apiKey ? apiKey.substring(0,6) + "..." + apiKey.substring(apiKey.length - 4) : "NOT SET OR EMPTY"}`);
     if (!apiKey) {
       context.log.error("HF_API_KEY is not set in environment variables.");
       context.res = {
