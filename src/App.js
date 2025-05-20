@@ -5,6 +5,7 @@ function App() {
   // State for AI and Code Assistant
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiOutput, setAiOutput] = useState(<p className="text-muted mb-0">AI response will appear here...</p>);
+  const [isLoading, setIsLoading] = useState(false);
   const [codePrompt, setCodePrompt] = useState("");
   const [codeOutput, setCodeOutput] = useState(<p className="text-muted mb-0">Code assistance will appear here...</p>);
 
@@ -53,7 +54,13 @@ function App() {
       setAiOutput(<p className="text-danger">Please enter a prompt</p>);
       return;
     }
-    setAiOutput(<p className="text-muted">Generating... <span className="spinner-border spinner-border-sm" role="status"></span></p>);
+    setIsLoading(true);
+    setAiOutput(
+      <div className="d-flex align-items-center text-primary">
+        <div className="spinner-border spinner-border-sm me-2" role="status"></div>
+        <span>Generating response...</span>
+      </div>
+    );
     try {
       const response = await fetch('/api/generate', {
         method: 'POST',
@@ -72,18 +79,45 @@ function App() {
       if (!response.ok) {
         throw new Error(data?.error || `Request failed with status ${response.status}`);
       }
-      // Hugging Face returns an array of summaries
-      const content = Array.isArray(data) && data[0]?.summary_text ? data[0].summary_text : JSON.stringify(data);
-      setAiOutput(<div className="p-3 bg-light rounded">{content}</div>);
+      // Handle different response formats
+      let content, confidence;
+      if (data?.answer) {
+        // Handle QA response format
+        content = data.answer;
+        confidence = data.score ? Math.round(data.score * 100) : null;
+      } else if (Array.isArray(data) && data[0]?.summary_text) {
+        // Handle summary response format
+        content = data[0].summary_text;
+      } else {
+        // Fallback to stringified JSON
+        content = JSON.stringify(data);
+      }
+      
+      setAiOutput(
+        <div className="ai-response p-4 rounded-3 shadow-sm border">
+          <div className="ai-text fs-5 mb-2">{content}</div>
+          {confidence && (
+            <div className="confidence-badge text-muted small mt-2">
+              <i className="bi bi-activity me-1"></i>
+              Confidence: {confidence}%
+            </div>
+          )}
+        </div>
+      );
     } catch (error) {
       setAiOutput(
-        <div className="alert alert-danger">
-          <strong>Error:</strong> {error.message}
+        <div className="alert alert-danger mb-0">
+          <div className="d-flex align-items-center">
+            <i className="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong>Error:</strong> {error.message}
+          </div>
           <div className="mt-2 small">
-            <p>If this issue persists, please try again later.</p>
+            <p className="mb-0">If this issue persists, please try again later.</p>
           </div>
         </div>
       );
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -329,10 +363,28 @@ function App() {
                 <p className="card-text">Try out this AI-powered text generator using Hugging Face's API. It can help with writing, coding, and more!</p>
                 <div className="mb-3">
                   <textarea className="form-control mb-2" id="aiPrompt" rows={3} placeholder="Enter your prompt here..." value={aiPrompt} onChange={e => setAiPrompt(e.target.value)} />
-                  <button className="btn btn-primary" onClick={generateText}>Generate</button>
+                  <button 
+                    className="btn btn-primary btn-lg px-4" 
+                    onClick={generateText}
+                    disabled={!aiPrompt.trim() || isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Generating...
+                      </>
+                    ) : (
+                      'Generate Text'
+                    )}
+                  </button>
                 </div>
                 <div className="border p-3 bg-light rounded" id="aiOutput">
                   {aiOutput}
+                  {confidenceScore && (
+                    <p>
+                      Confidence Score: <strong>{confidenceScore.toFixed(2)}</strong>
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
