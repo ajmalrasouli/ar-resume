@@ -5,6 +5,7 @@ function App() {
   // State for AI and Code Assistant
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiOutput, setAiOutput] = useState(<p className="text-muted mb-0">AI response will appear here...</p>);
+  const [confidenceScore, setConfidenceScore] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [codePrompt, setCodePrompt] = useState("");
   const [codeOutput, setCodeOutput] = useState(<p className="text-muted mb-0">Code assistance will appear here...</p>);
@@ -80,7 +81,9 @@ function App() {
         throw new Error(data?.error || `Request failed with status ${response.status}`);
       }
       // Handle different response formats
-      let content, confidence;
+      let content;
+      let confidence = null;
+      
       if (data?.answer) {
         // Handle QA response format
         content = data.answer;
@@ -93,13 +96,16 @@ function App() {
         content = JSON.stringify(data);
       }
       
+      // Update confidence score state
+      setConfidenceScore(confidence);
+      
       setAiOutput(
         <div className="ai-response p-4 rounded-3 shadow-sm border">
           <div className="ai-text fs-5 mb-2">{content}</div>
-          {confidence && (
+          {confidenceScore && (
             <div className="confidence-badge text-muted small mt-2">
               <i className="bi bi-activity me-1"></i>
-              Confidence: {confidence}%
+              Confidence: {confidenceScore}%
             </div>
           )}
         </div>
@@ -378,12 +384,13 @@ function App() {
                     )}
                   </button>
                 </div>
-                <div className="border p-3 bg-light rounded" id="aiOutput">
+                <div className="ai-response" id="aiOutput">
                   {aiOutput}
-                  {confidenceScore && (
-                    <p>
-                      Confidence Score: <strong>{confidenceScore.toFixed(2)}</strong>
-                    </p>
+                  {confidenceScore !== null && (
+                    <div className="confidence-badge">
+                      <i className="bi bi-activity me-1"></i>
+                      Confidence: {confidenceScore}%
+                    </div>
                   )}
                 </div>
               </div>
