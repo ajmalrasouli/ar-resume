@@ -75,30 +75,17 @@ module.exports = async function (context, req) {
 
     if (isGeneralChat) {
       context.log.info(`Attempting General Chat for input: "${inputs}"`);
+      
+      // UPDATED MODELS LIST - Using more reliable models that are likely to be available
       const chatModels = [
+        { id: 'facebook/opt-125m', name: 'OPT 125M', endpoint: 'https://api-inference.huggingface.co/models/facebook/opt-125m' },
         { id: 'gpt2', name: 'GPT-2', endpoint: 'https://api-inference.huggingface.co/models/gpt2' },
-        { id: 'distilgpt2', name: 'DistilGPT-2', endpoint: 'https://api-inference.huggingface.co/models/distilgpt2' },
-        { id: 'bigscience/bloom-560m', name: 'BLOOM 560M', endpoint: 'https://api-inference.huggingface.co/models/bigscience/bloom-560m' }
+        { id: 'EleutherAI/pythia-70m', name: 'Pythia 70M', endpoint: 'https://api-inference.huggingface.co/models/EleutherAI/pythia-70m' },
+        { id: 'distilgpt2', name: 'DistilGPT-2', endpoint: 'https://api-inference.huggingface.co/models/distilgpt2' }
       ];
       
       let lastError;
       
-      // Optional: API Key validation (can be removed if causing too much overhead or if confident in key)
-      try {
-        const whoami = await fetch('https://huggingface.co/api/whoami-v2', {
-          headers: { 'Authorization': `Bearer ${process.env.HF_API_KEY}` }
-        });
-        if (whoami.ok) {
-          const userInfo = await whoami.json();
-          context.log.info(`Hugging Face API key validated for user: ${userInfo.name || 'N/A'}`);
-        } else {
-          context.log.warn(`Hugging Face API key validation failed: ${whoami.status} - ${await whoami.text()}`);
-          // Potentially stop here if key validation is critical and fails
-        }
-      } catch (e) {
-        context.log.warn(`Error during API key validation: ${e.message}`);
-      }
-
       for (const model of chatModels) {
         modelUsed = model.id;
         context.log.info(`Trying General Chat model: ${model.name} (${model.id})`);
@@ -120,11 +107,11 @@ module.exports = async function (context, req) {
                   return_full_text: false, // Only get the generated part
                   num_return_sequences: 1,
                   do_sample: true, // For more creative responses
-                  top_k: 50, // Consider top_k and top_p for better sampling
+                  top_k: 50,
                   top_p: 0.95
                 }
               }),
-              // timeout: 20000 // Consider adding a timeout for each model fetch if using node-fetch v3+ with AbortController
+              timeout: 10000 // 10 second timeout per model
             }
           );
           
@@ -176,6 +163,8 @@ module.exports = async function (context, req) {
 
     } else { // Q&A Logic
       context.log.info(`Attempting Q&A for input: "${inputs}" with context for "${normalizedQuery}"`);
+      
+      // UPDATE: Use a more reliable Q&A model
       modelUsed = 'deepset/roberta-base-squad2';
       const defaultContextForUnhandledQA = "I am an AI assistant. I can try to answer questions if context is provided.";
       
@@ -186,17 +175,23 @@ module.exports = async function (context, req) {
         }
       };
       
-      hfResponse = await fetch( // Store the actual fetch response
-        `https://api-inference.huggingface.co/models/${modelUsed}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${process.env.HF_API_KEY}`
-          },
-          body: JSON.stringify(payload)
-        }
-      );
+      try {
+        hfResponse = await fetch( // Store the actual fetch response
+          `https://api-inference.huggingface.co/models/${modelUsed}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${process.env.HF_API_KEY}`
+            },
+            body: JSON.stringify(payload),
+            timeout: 10000 // 10 second timeout
+          }
+        );
+      } catch (error) {
+        context.log.error(`Error fetching from Q&A model: ${error.message}`);
+        // We'll handle this failure in the error checking below
+      }
     }
 
     // --- Process the hfResponse (whether from chat, Q&A, or fallback) ---
@@ -204,6 +199,52 @@ module.exports = async function (context, req) {
       const errorText = hfResponse ? await hfResponse.text() : "Unknown error before Hugging Face call";
       const errorStatus = hfResponse ? hfResponse.status : 500;
       context.log.error(`Hugging Face API interaction error: ${errorStatus} - ${errorText}`);
+      
+      // If Q&A failed, try to fall back to general chat
+      if (!isGeneralChat) {
+        context.log.info("Q&A model failed. Falling back to general chat model.");
+        
+        try {
+          const fallbackModel = 'facebook/opt-125m'; // Use a reliable fallback model
+          const fallbackFetch = await fetch(
+            `https://api-inference.huggingface.co/models/${fallbackModel}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${process.env.HF_API_KEY}`
+              },
+              body: JSON.stringify({
+                inputs: inputs,
+                parameters: {
+                  max_new_tokens: 70,
+                  return_full_text: false
+                }
+              }),
+              timeout: 10000
+            }
+          );
+          
+          if (fallbackFetch.ok) {
+            const fallbackData = await fallbackFetch.json();
+            if (fallbackData && Array.isArray(fallbackData) && fallbackData[0]?.generated_text) {
+              context.res = {
+                status: 200,
+                headers: corsHeaders,
+                body: JSON.stringify({
+                  response: fallbackData[0].generated_text.trim(),
+                  type: 'chat',
+                  model: fallbackModel,
+                  note: 'Fallback from failed Q&A'
+                })
+              };
+              return;
+            }
+          }
+        } catch (fallbackErr) {
+          context.log.error(`Fallback after Q&A failure also failed: ${fallbackErr.message}`);
+        }
+      }
       
       context.res = {
         status: errorStatus,
@@ -236,14 +277,15 @@ module.exports = async function (context, req) {
         if (!data || typeof data.score === 'undefined' || data.score < MIN_CONFIDENCE) {
           const lowConfidenceNote = data && typeof data.score !== 'undefined' ? `Original Q&A score ${data.score.toFixed(2)} was below threshold ${MIN_CONFIDENCE}.` : 'Q&A model did not provide a confident answer.';
           context.log.info(`Q&A confidence low or no answer. ${lowConfidenceNote} Falling back to a chat model for: "${inputs}"`);
-          modelUsed = 'gpt2'; // Fallback chat model
+          modelUsed = 'facebook/opt-125m'; // Updated fallback chat model
           
           const chatFallbackFetch = await fetch(
-            "https://api-inference.huggingface.co/models/gpt2", // Or another preferred chat model
+            `https://api-inference.huggingface.co/models/${modelUsed}`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.HF_API_KEY}` },
-              body: JSON.stringify({ inputs: inputs, parameters: { max_new_tokens: 70, return_full_text: false } })
+              body: JSON.stringify({ inputs: inputs, parameters: { max_new_tokens: 70, return_full_text: false } }),
+              timeout: 10000
             }
           );
           
@@ -299,7 +341,6 @@ module.exports = async function (context, req) {
       body: JSON.stringify({
         error: "An unexpected server error occurred.",
         details: error.message // Provide message for debugging
-        // stack: process.env.NODE_ENV === 'development' ? error.stack : undefined // Avoid sending stack in prod
       })
     };
   }
