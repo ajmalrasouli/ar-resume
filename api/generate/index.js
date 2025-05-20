@@ -1,4 +1,42 @@
-require('dotenv').config();
+// Try using the Hugging Face Inference API directly without model specification
+      // This is a simpler approach that lets Hugging Face select an appropriate model
+      if (!hfResponse) {
+        context.log.info("Trying Hugging Face Inference API with default model selection");
+        try {
+          const inferenceResponse = await fetch('https://api-inference.huggingface.co/models/gpt2', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${process.env.HF_API_KEY}`
+            },
+            body: JSON.stringify({
+              inputs: inputs,
+              options: {
+                use_cache: true,
+                wait_for_model: true
+              }
+            }),
+            timeout: 15000
+          });
+          
+          if (inferenceResponse.ok) {
+            const inferenceData = await inferenceResponse.json();
+            if (Array.isArray(inferenceData) && inferenceData.length > 0) {
+              hfResponse = {
+                ok: true,
+                status: 200,
+                json: async () => inferenceData
+              };
+              modelUsed = 'hf-inference-api';
+              context.log.info("Successfully used Hugging Face Inference API with default model.");
+            }
+          } else {
+            context.log.warn(`Hugging Face Inference API with default model failed: ${inferenceResponse.status}`);
+          }
+        } catch (inferenceError) {
+          context.log.warn(`Error with Hugging Face Inference API: ${inferenceError.message}`);
+        }
+      }require('dotenv').config();
 const fetch = require('node-fetch');
 
 module.exports = async function (context, req) {
@@ -76,12 +114,12 @@ module.exports = async function (context, req) {
     if (isGeneralChat) {
       context.log.info(`Attempting General Chat for input: "${inputs}"`);
       
-      // UPDATED MODELS LIST - Using more reliable models that are likely to be available
+      // UPDATED MODELS LIST - Using the smallest, most reliable text generation models
       const chatModels = [
-        { id: 'facebook/opt-125m', name: 'OPT 125M', endpoint: 'https://api-inference.huggingface.co/models/facebook/opt-125m' },
+        { id: 'sshleifer/tiny-gpt2', name: 'Tiny GPT-2', endpoint: 'https://api-inference.huggingface.co/models/sshleifer/tiny-gpt2' },
         { id: 'gpt2', name: 'GPT-2', endpoint: 'https://api-inference.huggingface.co/models/gpt2' },
-        { id: 'EleutherAI/pythia-70m', name: 'Pythia 70M', endpoint: 'https://api-inference.huggingface.co/models/EleutherAI/pythia-70m' },
-        { id: 'distilgpt2', name: 'DistilGPT-2', endpoint: 'https://api-inference.huggingface.co/models/distilgpt2' }
+        { id: 'openai-community/gpt2', name: 'OpenAI Community GPT-2', endpoint: 'https://api-inference.huggingface.co/models/openai-community/gpt2' },
+        { id: 'distilbert-base-uncased', name: 'DistilBERT', endpoint: 'https://api-inference.huggingface.co/models/distilbert-base-uncased' }
       ];
       
       let lastError;
@@ -97,7 +135,8 @@ module.exports = async function (context, req) {
               headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${process.env.HF_API_KEY}`,
-                "X-Wait-For-Model": "true" // Wait if model is loading (can add to timeout)
+                "X-Wait-For-Model": "true", // Wait if model is loading
+                "X-Use-Cache": "true" // Use Hugging Face's cache for faster responses
               },
               body: JSON.stringify({
                 inputs: inputs, // Use original 'inputs' here for casing, etc.
