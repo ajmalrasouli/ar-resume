@@ -129,14 +129,11 @@ module.exports = async function (context, req) {
       context.log.info(`Attempting General Chat for input: "${inputs}"`);
       
       const chatModels = [
-        // Prioritize smaller, generally reliable models first
+        // Only include models that are confirmed to work
         { id: 'gpt2', name: 'GPT-2', endpoint: 'https://api-inference.huggingface.co/models/gpt2' },
-        { id: 'distilgpt2', name: 'DistilGPT-2', endpoint: 'https://api-inference.huggingface.co/models/distilgpt2' },
         { id: 'EleutherAI/gpt-neo-125m', name: 'GPT-Neo 125M', endpoint: 'https://api-inference.huggingface.co/models/EleutherAI/gpt-neo-125m' },
-        { id: 'facebook/opt-350m', name: 'OPT 350M', endpoint: 'https://api-inference.huggingface.co/models/facebook/opt-350m' },
-        // 'sshleifer/tiny-gpt2' is very small, might include if others fail
-        // 'openai-community/gpt2' is often the same as 'gpt2'
-        // 'distilbert-base-uncased' is not a text-generation model in the same way, so it's removed from this primary list
+        { id: 'facebook/opt-125m', name: 'OPT 125M', endpoint: 'https://api-inference.huggingface.co/models/facebook/opt-125m' },
+        { id: 'sshleifer/tiny-gpt2', name: 'Tiny GPT-2', endpoint: 'https://api-inference.huggingface.co/models/sshleifer/tiny-gpt2' }
       ];
       
       let lastError;
