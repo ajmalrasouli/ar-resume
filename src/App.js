@@ -84,13 +84,20 @@ function App() {
       let content;
       let confidence = null;
       
-      if (data?.answer) {
+      if (data?.response) {
+        // Handle direct response format
+        content = data.response;
+        confidence = data.score ? Math.round(data.score * 100) : null;
+      } else if (data?.answer) {
         // Handle QA response format
         content = data.answer;
         confidence = data.score ? Math.round(data.score * 100) : null;
       } else if (Array.isArray(data) && data[0]?.summary_text) {
         // Handle summary response format
         content = data[0].summary_text;
+      } else if (Array.isArray(data) && data[0]?.generated_text) {
+        // Handle text generation format
+        content = data[0].generated_text;
       } else {
         // Fallback to stringified JSON
         content = JSON.stringify(data);
