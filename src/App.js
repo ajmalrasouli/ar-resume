@@ -340,19 +340,6 @@ function App() {
                 </div>
               </div>
             </div>
-            <div className="card">
-              <div className="card-body">
-                <h3 className="card-title">Code Assistant</h3>
-                <p className="card-text">Get help with your code using DeepSeek's AI. Ask coding questions or get code explanations.</p>
-                <div className="mb-3">
-                  <textarea className="form-control mb-2" id="codePrompt" rows={3} placeholder="Ask a coding question or paste code..." value={codePrompt} onChange={e => setCodePrompt(e.target.value)} />
-                  <button className="btn btn-primary" onClick={getCodeHelp}>Get Help</button>
-                </div>
-                <div className="border p-3 bg-light rounded" id="codeOutput">
-                  {codeOutput}
-                </div>
-              </div>
-            </div>
           </div>
         </section>
         <hr className="m-0" style={{height: '3px', backgroundColor: '#bd5d38', opacity: 0.8, margin: '3rem 0', border: 'none'}} />
