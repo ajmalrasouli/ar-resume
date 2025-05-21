@@ -436,19 +436,6 @@
                         </div>
                     </div>
 
-                    <div class="card">
-                        <div class="card-body">
-                            <h3 class="card-title">Code Assistant</h3>
-                            <p class="card-text">Get help with your code using DeepSeek's AI. Ask coding questions or get code explanations.</p>
-                            <div class="mb-3">
-                                <textarea class="form-control mb-2" id="codePrompt" rows="3" placeholder="Ask a coding question or paste code..."></textarea>
-                                <button class="btn btn-primary" onclick="getCodeHelp()">Get Help</button>
-                            </div>
-                            <div class="border p-3 bg-light rounded" id="codeOutput">
-                                <p class="text-muted mb-0">Code assistance will appear here...</p>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </section>
             <hr class="m-0" style="height: 3px; background-color: #bd5d38; opacity: 0.8; margin: 3rem 0; border: none;" />
@@ -711,75 +698,6 @@
                             <strong>Error:</strong> ${error.message}
                             <div class="mt-2 small">
                                 <p>If this issue persists, please try again later.</p>
-                            </div>
-                        </div>`;
-                }
-            }
-
-            // Code Assistance with DeepSeek - Secure Version
-            async function getCodeHelp() {
-                const prompt = document.getElementById('codePrompt').value;
-                const output = document.getElementById('codeOutput');
-                
-                if (!prompt.trim()) {
-                    output.innerHTML = '<p class="text-danger">Please enter a coding question or paste some code</p>';
-                    return;
-                }
-
-                output.innerHTML = '<p class="text-muted">Getting help... <div class="spinner-border spinner-border-sm" role="status"></div></p>';
-
-                try {
-                    const response = await fetch('/api/generate', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            prompt,
-                            model: 'deepseek-coder',
-                            max_tokens: 1000
-                        })
-                    });
-
-                    
-                    let data;
-                    try {
-                        const responseText = await response.text();
-                        data = responseText ? JSON.parse(responseText) : null;
-                    } catch (e) {
-                        console.error('Failed to parse response:', e);
-                        throw new Error('Failed to process the response from the server');
-                    }
-
-                    if (!response.ok) {
-                        console.error('API Error:', data);
-                        throw new Error(data?.error || `Request failed with status ${response.status}`);
-                    }
-
-                    if (!data || !data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
-                        throw new Error('Invalid response format from the server');
-                    }
-
-                    const codeResponse = data.choices[0].message.content;
-                    // Format the response with proper line breaks and code formatting
-                    const formattedResponse = codeResponse
-                        .replace(/```(?:\w+\n)?([\s\S]*?)```/g, 
-                            (match, code) => 
-                                `<div class="bg-dark text-light p-3 rounded mb-3">
-                                    <pre class="mb-0 text-white-50">${code.trim()}</pre>
-                                </div>`
-                        )
-                        .replace(/\n(?!<\/?(div|pre|code)>)/g, '<br>');
-                    
-                    output.innerHTML = `<div class="bg-light p-3 rounded">${formattedResponse}</div>`;
-                    
-                } catch (error) {
-                    console.error('Error in getCodeHelp:', error);
-                    output.innerHTML = `
-                        <div class="alert alert-danger">
-                            <strong>Error:</strong> ${error.message}
-                            <div class="mt-2 small">
-                                <p>If this issue persists, please try again later.</p>
                                 <p class="mb-0">Check the browser console for more details.</p>
                             </div>
                         </div>`;
@@ -787,7 +705,7 @@
             }
         </script>
         <style>
-            #aiOutput, #codeOutput {
+            #aiOutput {
                 min-height: 100px;
             }
             pre {

@@ -59,7 +59,11 @@ module.exports = async function (context, req) {
     const { inputs } = req.body;
     const normalizedQuery = inputs.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
 
-    // Keep the specific Q&A contexts for direct answers
+    // Determine if it's a specific Q&A or general chat
+    let isGeneralChat = true;
+    let qaContextToUse = null;
+
+    // Check if the query matches a specific Q&A context
     const specificQAContexts = {
       "what color is the sky": "The sky is typically blue during the day due to Rayleigh scattering of sunlight.",
       "what colour is the sky": "The sky is typically blue during the day due to Rayleigh scattering of sunlight.",
@@ -68,10 +72,6 @@ module.exports = async function (context, req) {
       "what is the meaning of life": "The meaning of life is a philosophical question with many possible answers, often considered to be about finding purpose and happiness."
     };
 
-    let isGeneralChat = true;
-    let qaContextToUse = null;
-
-    // Check if the query matches a specific Q&A context
     if (specificQAContexts.hasOwnProperty(normalizedQuery)) {
       isGeneralChat = false;
       qaContextToUse = specificQAContexts[normalizedQuery];
@@ -79,10 +79,9 @@ module.exports = async function (context, req) {
     } else {
       context.log.info(`Input "${inputs}" did not match specific Q&A contexts. Routing to OpenAI gpt-4o-mini.`);
     }
-    
+
     let responseBody;
-    
-    // If it's a specific Q&A with a predefined answer, use that directly
+
     if (!isGeneralChat) {
       responseBody = { 
         answer: qaContextToUse, 
@@ -91,7 +90,6 @@ module.exports = async function (context, req) {
         model: 'direct-qa' 
       };
     } else {
-      // For all other queries, use OpenAI's gpt-4o-mini
       try {
         context.log.info(`Calling OpenAI gpt-4o-mini for input: "${inputs}"`);
         
