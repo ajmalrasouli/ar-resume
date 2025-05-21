@@ -68,46 +68,99 @@ module.exports = async function (context, req) {
       "what is the meaning of life": "The meaning of life is a philosophical question with many possible answers, often considered to be about finding purpose and happiness."
     };
 
-    let isGeneralChat = true;
-    let qaContextToUse = null;
+    // Code-related keywords and patterns to detect coding questions
+    const codeKeywords = [
+      'code', 'function', 'programming', 'algorithm', 'syntax', 'compile', 'debug',
+      'javascript', 'python', 'java', 'c++', 'c#', 'ruby', 'php', 'swift', 'kotlin', 'rust', 'go',
+      'html', 'css', 'sql', 'database', 'api', 'json', 'xml', 'regex', 'git', 'github',
+      'array', 'string', 'object', 'class', 'method', 'variable', 'loop', 'conditional',
+      'print', 'console.log', 'import', 'require', 'module', 'package', 'library', 'framework'
+    ];
 
-    // Check if the query matches a specific Q&A context
+    // Common programming language patterns
+    const codePhrasePatterns = [
+      /how (do|to|can) I.*in (javascript|python|java|c\+\+|c#|ruby|php|swift|kotlin|rust|go)/i,
+      /how (do|to|can) I (create|implement|build|write|code|program)/i,
+      /what('s| is) the (syntax|code|function|method) (for|to)/i,
+      /explain.*(code|function|method|class|algorithm)/i,
+      /debug.*(code|function|error|problem)/i,
+      /write (a|an|the).*(function|code|program|script)/i,
+      /convert.*(code|function|algorithm)/i,
+      /optimize.*(code|function|algorithm|performance)/i
+    ];
+
+    // Determine query type: specific Q&A, code assistant, or general chat
+    let queryType = 'general';
+    let qaContextToUse = null;
+    
+    // Check if it's a specific Q&A
     if (specificQAContexts.hasOwnProperty(normalizedQuery)) {
-      isGeneralChat = false;
+      queryType = 'qa';
       qaContextToUse = specificQAContexts[normalizedQuery];
       context.log.info(`Input "${inputs}" matched a specific Q&A context. Using direct answer.`);
-    } else {
-      context.log.info(`Input "${inputs}" did not match specific Q&A contexts. Routing to OpenAI gpt-4o-mini.`);
+    } 
+    // Check if it's a code-related question
+    else if (
+      // Check for code keywords
+      codeKeywords.some(keyword => normalizedQuery.includes(keyword)) ||
+      // Check for code phrase patterns
+      codePhrasePatterns.some(pattern => pattern.test(inputs))
+    ) {
+      queryType = 'code';
+      context.log.info(`Input "${inputs}" detected as a code-related question. Routing to Code Assistant.`);
+    }
+    // Otherwise, it's a general chat
+    else {
+      context.log.info(`Input "${inputs}" routed to general chat.`);
     }
     
     let responseBody;
     
-    // If it's a specific Q&A with a predefined answer, use that directly
-    if (!isGeneralChat) {
+    // Handle based on query type
+    if (queryType === 'qa') {
+      // Direct answer from predefined Q&A
       responseBody = { 
         answer: qaContextToUse, 
         score: 1.0, 
         type: 'qa', 
         model: 'direct-qa' 
       };
-    } else {
-      // For all other queries, use OpenAI's gpt-4o-mini
+    } 
+    else {
+      // For both code and general queries, use OpenAI but with different prompts
       try {
-        context.log.info(`Calling OpenAI gpt-4o-mini for input: "${inputs}"`);
+        context.log.info(`Calling OpenAI gpt-4o-mini for ${queryType} query: "${inputs}"`);
         
         // Set a timeout for the OpenAI call
         const timeoutPromise = new Promise((_, reject) => {
           setTimeout(() => reject(new Error('OpenAI API request timed out after 15 seconds')), 15000);
         });
         
+        // Prepare messages based on query type
+        let messages = [];
+        
+        if (queryType === 'code') {
+          // Specialized system prompt for code assistant
+          messages = [
+            { 
+              role: "system", 
+              content: "You are a helpful code assistant specialized in programming and software development. Provide clear, concise, and accurate code examples and explanations. When showing code, use proper formatting and include comments to explain key parts. If asked to write code, provide working solutions with explanations of how the code works. Focus on best practices and efficient solutions."
+            },
+            { role: "user", content: inputs }
+          ];
+        } else {
+          // Simple prompt for general chat
+          messages = [
+            { role: "user", content: inputs }
+          ];
+        }
+        
         // Make the actual API call
         const apiCallPromise = client.chat.completions.create({
           model: "gpt-4o-mini",
-          messages: [
-            { role: "user", content: inputs }
-          ],
-          max_tokens: 150,
-          temperature: 0.7,
+          messages: messages,
+          max_tokens: queryType === 'code' ? 500 : 150, // Allow longer responses for code
+          temperature: queryType === 'code' ? 0.3 : 0.7, // Lower temperature for more precise code
           top_p: 0.95,
           frequency_penalty: 0,
           presence_penalty: 0
@@ -118,11 +171,11 @@ module.exports = async function (context, req) {
         
         if (completion && completion.choices && completion.choices.length > 0) {
           const generatedText = completion.choices[0].message.content.trim();
-          context.log.info(`OpenAI gpt-4o-mini responded successfully with ${generatedText.length} characters`);
+          context.log.info(`OpenAI gpt-4o-mini responded successfully with ${generatedText.length} characters for ${queryType} query`);
           
           responseBody = { 
             response: generatedText, 
-            type: 'chat', 
+            type: queryType, // 'code' or 'general'
             model: 'gpt-4o-mini',
             usage: completion.usage
           };
@@ -130,28 +183,37 @@ module.exports = async function (context, req) {
           throw new Error('OpenAI returned an empty or invalid response');
         }
       } catch (error) {
-        context.log.error(`Error with OpenAI API: ${error.message}`);
+        context.log.error(`Error with OpenAI API for ${queryType} query: ${error.message}`);
         
-        // Fallback response if OpenAI fails
-        const fallbackJokes = [
-          "Why don't scientists trust atoms? Because they make up everything!",
-          "I told my wife she was drawing her eyebrows too high. She looked surprised.",
-          "Parallel lines have so much in common. It's a shame they'll never meet.",
-          "I'm reading a book about anti-gravity. It's impossible to put down!",
-          "Did you hear about the mathematician who's afraid of negative numbers? He'll stop at nothing to avoid them.",
-          "Why was the math book sad? Because it had too many problems.",
-          "What do you call a fake noodle? An impasta!",
-          "Why did the scarecrow win an award? Because he was outstanding in his field!",
-          "I would tell you a chemistry joke, but I know I wouldn't get a reaction.",
-          "Why don't some couples go to the gym? Because some relationships don't work out."
-        ];
-        const randomJoke = fallbackJokes[Math.floor(Math.random() * fallbackJokes.length)];
-        
-        responseBody = { 
-          response: `${randomJoke} (This is a fallback response as AI models are currently unavailable. Error: ${error.message.substring(0, 100)})`, 
-          type: 'fallback', 
-          model: 'fallback-joke' 
-        };
+        // Different fallback responses based on query type
+        if (queryType === 'code') {
+          responseBody = { 
+            response: "I'm sorry, I couldn't process your code request at the moment. Please try again later or rephrase your question. Error: " + error.message.substring(0, 100), 
+            type: 'code_error', 
+            model: 'fallback' 
+          };
+        } else {
+          // Fallback jokes for general chat
+          const fallbackJokes = [
+            "Why don't scientists trust atoms? Because they make up everything!",
+            "I told my wife she was drawing her eyebrows too high. She looked surprised.",
+            "Parallel lines have so much in common. It's a shame they'll never meet.",
+            "I'm reading a book about anti-gravity. It's impossible to put down!",
+            "Did you hear about the mathematician who's afraid of negative numbers? He'll stop at nothing to avoid them.",
+            "Why was the math book sad? Because it had too many problems.",
+            "What do you call a fake noodle? An impasta!",
+            "Why did the scarecrow win an award? Because he was outstanding in his field!",
+            "I would tell you a chemistry joke, but I know I wouldn't get a reaction.",
+            "Why don't some couples go to the gym? Because some relationships don't work out."
+          ];
+          const randomJoke = fallbackJokes[Math.floor(Math.random() * fallbackJokes.length)];
+          
+          responseBody = { 
+            response: `${randomJoke} (This is a fallback response as AI models are currently unavailable. Error: ${error.message.substring(0, 100)})`, 
+            type: 'fallback', 
+            model: 'fallback-joke' 
+          };
+        }
       }
     }
     
