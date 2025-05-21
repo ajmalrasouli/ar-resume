@@ -27,28 +27,24 @@ function App() {
           inputs: aiPrompt // <-- This is what your backend expects
         })
       });
-      let data;
-      try {
-        const responseText = await response.text();
-        data = responseText ? JSON.parse(responseText) : null;
-      } catch (e) {
-        throw new Error('Failed to process the response from the server');
-      }
+
       if (!response.ok) {
-        throw new Error(data?.error || `Request failed with status ${response.status}`);
+        throw new Error(`Error: ${response.status}`);
       }
-      // Handle different response formats
-      let content;
-      let confidence = null;
+
+      const responseText = await response.text();
+      const data = responseText ? JSON.parse(responseText) : null;
       
-      if (data?.response) {
-        // Handle direct response format
-        content = data.response;
-        confidence = data.score ? Math.round(data.score * 100) : null;
-      } else if (data?.answer) {
-        // Handle QA response format
+      if (!data) {
+        throw new Error('No data received from the server');
+      }
+
+      let content = '';
+
+      // Handle different response formats
+      if (data.answer) {
+        // Handle Q&A format
         content = data.answer;
-        confidence = data.score ? Math.round(data.score * 100) : null;
       } else if (Array.isArray(data) && data[0]?.summary_text) {
         // Handle summary response format
         content = data[0].summary_text;
@@ -60,18 +56,9 @@ function App() {
         content = JSON.stringify(data);
       }
       
-      // Update confidence score state
-      setConfidenceScore(confidence);
-      
       setAiOutput(
         <div className="ai-response p-4 rounded-3 shadow-sm border">
           <div className="ai-text fs-5 mb-2">{content}</div>
-          {confidenceScore && (
-            <div className="confidence-badge text-muted small mt-2">
-              <i className="bi bi-activity me-1"></i>
-              Confidence: {confidenceScore}%
-            </div>
-          )}
         </div>
       );
     } catch (error) {
@@ -350,12 +337,6 @@ function App() {
                 </div>
                 <div className="ai-response" id="aiOutput">
                   {aiOutput}
-                  {confidenceScore !== null && (
-                    <div className="confidence-badge">
-                      <i className="bi bi-activity me-1"></i>
-                      Confidence: {confidenceScore}%
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
