@@ -41,8 +41,11 @@ function App() {
 
       let content = '';
 
-      // Handle different response formats
-      if (data.answer) {
+      // Handle the response format from the API
+      if (data.response) {
+        // Handle the current API response format
+        content = data.response;
+      } else if (data.answer) {
         // Handle Q&A format
         content = data.answer;
       } else if (Array.isArray(data) && data[0]?.summary_text) {
@@ -51,9 +54,12 @@ function App() {
       } else if (Array.isArray(data) && data[0]?.generated_text) {
         // Handle text generation format
         content = data[0].generated_text;
+      } else if (typeof data === 'object') {
+        // If it's an object but we don't have a specific format, try to find a text field
+        content = data.text || data.message || data.content || JSON.stringify(data);
       } else {
-        // Fallback to stringified JSON
-        content = JSON.stringify(data);
+        // Fallback to stringified data
+        content = String(data);
       }
       
       setAiOutput(
