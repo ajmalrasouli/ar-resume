@@ -1,53 +1,83 @@
-# #CloudGuruChallenge: Your resume in Azure
-Here's what I came up with as a solution to the [Azure Resume Challenge](https://acloudguru.com/blog/engineering/cloudguruchallenge-your-resume-in-azure)
+# Ajmal Rasouli - Cloud & DevOps Engineer
 
+[![Website](https://img.shields.io/badge/Visit-My%20Resume-0078D4?style=for-the-badge&logo=microsoft-azure&logoColor=white)](https://lemon-desert-05dc5301e.6.azurestaticapps.net)
+[![Visitor Count](https://badge.tcblabs.net/api/hc/arasouli/index)](https://lemon-desert-05dc5301e.6.azurestaticapps.net)
 
+## About This Project
 
-View it live [here](https://lemon-desert-05dc5301e.6.azurestaticapps.net)
+This is my personal resume website built with React and hosted on Azure Static Web Apps. The site features a clean, responsive design and integrates with Azure Functions for backend services.
 
+🔗 **Live Demo**: [lemon-desert-05dc5301e.6.azurestaticapps.net](https://lemon-desert-05dc5301e.6.azurestaticapps.net)
 
+## 🚀 Features
 
-Before going through these steps you’ll need to have an Azure account. If you don’t have one you can setup a free trial account at https://azure.microsoft.com/free. Let’s walk through each of these steps.
+- **Modern React Frontend**: Built with functional components and React hooks
+- **Azure Integration**:
+  - Hosted on Azure Static Web Apps
+  - Serverless backend with Azure Functions
+  - Visitor counter using Cosmos DB
+- **Responsive Design**: Works on all device sizes
+- **AI-Powered Text Generation**: Integrated with AI for enhanced interactivity
 
-![Diagram](assets/img/diagram.png)
+## 🛠️ Tech Stack
 
-## Prerequisites
+- **Frontend**: 
+  - React.js
+  - Bootstrap 5
+  - React Icons
+  
+- **Backend**:
+  - Azure Functions (Node.js)
+  - Cosmos DB (for visitor counter)
+  
+- **DevOps**:
+  - GitHub Actions for CI/CD
+  - Azure Static Web Apps for hosting
 
-- [GitHub account](https://github.com/join)
-- [Azure account](https://azure.microsoft.com/en-us/free)
-- [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
-- [.NET Core 3.1 LTS](https://dotnet.microsoft.com/download/dotnet/3.1)
-- [Azure Functions Core Tools](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local?tabs=macos%2Ccsharp%2Cbash#install-the-azure-functions-core-tools)
-- [Visual Studio Code](https://code.visualstudio.com)
-- [Visual Code Extensions](https://code.visualstudio.com/docs/introvideos/extend)
-  - [Azure Functions Extensions](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurefunctions)
-  - [C# Extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp)
-  - [Azure Storage Extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurestorage)
-- [Full solution](https://github.com/ACloudGuru-Resources/acg-project-azure-resume)
+## 🚀 Getting Started
 
-## Front-end resources
+### Prerequisites
 
-The front-end is a static site with HTML, CSS, and JavaScript. It's static and has a visitor counter. The visitor counter data fetched via an API call to an Azure Function.
+- Node.js (v14 or later)
+- npm or yarn
+- Azure CLI (for local development)
+- Azure Functions Core Tools
 
-## Back-end resources
+### Local Development
 
-The back-end is an [HTTP triggered](https://docs.microsoft.com/en-us/azure/azure-functions/functions-bindings-http-webhook-trigger?tabs=csharp) Azure Functions with Cosmos DB input and output binding. The Function is triggered, it retrieves the CosmosDB item, add +1 to it, and saves it and returns its value to the caller.
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/ajmalrasouli/ar-resume.git
+   cd ar-resume
+   ```
 
-## CI/CD Resources
+2. Install dependencies:
+   ```bash
+   npm install
+   cd api
+   npm install
+   cd ..
+   ```
 
-- This is how you can deploy a blob storage static site with [GitHub actions.](https://docs.microsoft.com/en-us/azure/storage/blobs/storage-blobs-static-site-github-actions) Used in frontend.main.yml.
+3. Start the development server:
+   ```bash
+   npm start
+   ```
 
+4. In a separate terminal, start the Azure Functions locally:
+   ```bash
+   cd api
+   func start
+   ```
 
-## Visitor Counter Badge (Free!)
-Powered by Microsoft Azure
+## 📦 Deployment
 
-Visitor Counter Badge is a simple open-source utility you can use to display the number of visitors on a web page, repository, or profile. Every request to render the visitor count badge invokes an HTTP-triggered Azure function that dynamically generates an SVG image that you can apply on a web page, profile page, or repository. 
+The application is automatically deployed to Azure Static Web Apps on push to the `main` branch.
 
-If you are further interested in learning the internals of this service, please read the Visitor Counter Badge article by Rahul Rai on
-[https://thecloudblog.net/lab/serverless-visitor-counter-badge-with-azure-functions/]
+## 📝 License
 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-#
+## 🤝 Contributing
 
-
-![](https://badge.tcblabs.net/api/hc/arasouli/index)
+Contributions are welcome! Please feel free to submit a Pull Request.
