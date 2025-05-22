@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import './css/styles.css';
+import AIProjects from './components/AIProjects';
 
 function App() {
   // State for AI Text Generator
@@ -316,38 +317,13 @@ function App() {
         </section>
         <hr className="m-0" style={{height: '3px', backgroundColor: '#bd5d38', opacity: 0.8, margin: '3rem 0', border: 'none'}} />
 
-        {/* AI Projects Section (with React state) */}
-        <section className="resume-section" id="ai-projects">
-          <div className="resume-section-content">
-            <h2 className="mb-5">AI Projects</h2>
-            <div className="card mb-4">
-              <div className="card-body">
-                <h3 className="card-title">AI Text Generator</h3>
-                <p className="card-text">Try out this AI-powered text generator using Hugging Face's API. It can help with writing, coding, and more!</p>
-                <div className="mb-3">
-                  <textarea className="form-control mb-2" id="aiPrompt" rows={3} placeholder="Enter your prompt here..." value={aiPrompt} onChange={e => setAiPrompt(e.target.value)} />
-                  <button 
-                    className="btn btn-primary btn-lg px-4" 
-                    onClick={generateText}
-                    disabled={!aiPrompt.trim() || isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        Generating...
-                      </>
-                    ) : (
-                      'Generate Text'
-                    )}
-                  </button>
-                </div>
-                <div className="ai-response" id="aiOutput">
-                  {aiOutput}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* AI Projects Section */}
+        <AIProjects 
+          aiPrompt={aiPrompt}
+          setAiPrompt={setAiPrompt}
+          aiOutput={aiOutput}
+          generateText={generateText}
+        />
         <hr className="m-0" style={{height: '3px', backgroundColor: '#bd5d38', opacity: 0.8, margin: '3rem 0', border: 'none'}} />
 
         {/* Certificates Section */}

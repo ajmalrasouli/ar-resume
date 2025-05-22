@@ -11,13 +11,17 @@ This is my personal resume website built with React and hosted on Azure Static W
 
 ## 🚀 Features
 
-- **Modern React Frontend**: Built with functional components and React hooks
+- **Modern React Frontend**: 
+  - Built with functional components and React hooks
+  - Interactive UI with real-time feedback
 - **Azure Integration**:
   - Hosted on Azure Static Web Apps
   - Serverless backend with Azure Functions
   - Visitor counter using Cosmos DB
 - **Responsive Design**: Works on all device sizes
-- **AI-Powered Text Generation**: Integrated with AI for enhanced interactivity
+- **AI-Powered Features**:
+  - Text Generation: Generate text using AI
+  - Image Generation: Create images from text prompts using Stability AI
 
 ## 🛠️ Tech Stack
 
@@ -29,10 +33,28 @@ This is my personal resume website built with React and hosted on Azure Static W
 - **Backend**:
   - Azure Functions (Node.js)
   - Cosmos DB (for visitor counter)
+  - Third-party API integration (Stability AI)
   
 - **DevOps**:
   - GitHub Actions for CI/CD
   - Azure Static Web Apps for hosting
+
+## 🖼️ AI Image Generator
+
+The AI Image Generator allows you to create images from text descriptions using Stability AI's Stable Diffusion model.
+
+### Features
+- Generate high-quality images from text prompts
+- Supports various image dimensions
+- Real-time generation status
+- Download generated images
+
+### How to Use
+1. Navigate to the "AI Projects" section
+2. Enter your image description in the text area
+3. Click "Generate Image"
+4. Wait for the image to generate
+5. Download the image using the download button
 
 ## 🚀 Getting Started
 
@@ -43,7 +65,26 @@ This is my personal resume website built with React and hosted on Azure Static W
 - Azure CLI (for local development)
 - Azure Functions Core Tools
 
-### Local Development
+### 🔧 Environment Setup
+
+1. Create a `.env` file in the root directory with your API keys:
+   ```
+   REACT_APP_STABILITY_API_KEY=your_stability_ai_key_here
+   ```
+
+2. For local development, create a `local.settings.json` in the `/api` directory:
+   ```json
+   {
+     "IsEncrypted": false,
+     "Values": {
+       "FUNCTIONS_WORKER_RUNTIME": "node",
+       "STABILITY_API_KEY": "your_stability_ai_key_here"
+     },
+     "ConnectionStrings": {}
+   }
+   ```
+
+## Local Development
 
 1. Clone the repository:
    ```bash
