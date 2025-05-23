@@ -1,142 +1,115 @@
+// Import the OpenAI package
 const OpenAI = require('openai');
-const rateLimit = require('../../lib/rate-limit');
 
-// Sample resume data - you should replace this with your actual resume data
-const resumeData = {
-  name: "Ajmal Rasouli",
-  title: "Cloud & DevOps Engineer",
-  skills: ["Azure", "Docker", "Kubernetes", "Terraform", "CI/CD", "Python", "JavaScript"],
-  experience: [
-    {
-      role: "DevOps Engineer",
-      company: "Your Company",
-      period: "2020 - Present",
-      description: "Building and maintaining cloud infrastructure and CI/CD pipelines."
-    },
-    // Add more experiences as needed
-  ],
-  education: [
-    {
-      degree: "Your Degree",
-      institution: "Your University",
-      year: "Year"
+// Log environment variables (except sensitive ones) for debugging
+function logEnvironment(context) {
+    const envVars = {};
+    for (const key in process.env) {
+        // Don't log sensitive information
+        if (key.includes('KEY') || key.includes('SECRET') || key.includes('PASSWORD')) {
+            envVars[key] = '***REDACTED***';
+        } else {
+            envVars[key] = process.env[key];
+        }
     }
-  ],
-  projects: [
-    {
-      name: "AI-Powered Resume",
-      description: "Interactive resume with AI features"
-    }
-    // Add more projects as needed
-  ]
-};
+    context.log('Environment variables:', JSON.stringify(envVars, null, 2));
+}
 
-module.exports = async function (context, req) {
-  // Check for OpenAI API key
-  if (!process.env.OPENAI_API_KEY) {
-    context.log.error('OpenAI API key is not set in environment variables');
-    return {
-      status: 500,
-      body: { 
-        error: 'Server configuration error. Please contact the administrator.',
-        details: 'OpenAI API key is not configured'
-      }
+// Main function
+async function chatbot(context, req) {
+    // Log the incoming request
+    context.log('Chatbot function processed a request.');
+    context.log('Request method:', req.method);
+    context.log('Request headers:', JSON.stringify(req.headers, null, 2));
+    
+    // Log environment variables for debugging
+    logEnvironment(context);
+
+    // Set CORS headers
+    const corsHeaders = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type"
     };
-  }
 
-  // Set CORS headers
-  const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Max-Age": "86400"
-  };
-
-  // Handle preflight OPTIONS request
-  if (req.method === "OPTIONS") {
-    context.res = {
-      status: 204,
-      headers: corsHeaders,
-      body: null
-    };
-    return;
-  }
-
-  try {
-    // Rate limiting
-    await rateLimit(context); 
-
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error("OpenAI API key is not configured");
+    // Handle preflight OPTIONS request
+    if (req.method === "OPTIONS") {
+        context.log('Handling OPTIONS preflight request');
+        context.res = {
+            status: 204,
+            headers: corsHeaders,
+            body: null
+        };
+        return;
     }
 
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    try {
+        // Check for OpenAI API key
+        if (!process.env.OPENAI_API_KEY) {
+            const error = new Error('OpenAI API key is not configured');
+            error.status = 500;
+            error.code = 'MISSING_API_KEY';
+            throw error;
+        }
 
-    const messages = req.body?.messages || [];
-    
-    // System prompt with resume data
-    const systemPrompt = {
-      role: "system",
-      content: `You are Ajmal's AI assistant. Your purpose is to help people learn about Ajmal's professional background, skills, and experience.
-      
-      Here's Ajmal's resume information:
-      ${JSON.stringify(resumeData, null, 2)}
-      
-      Guidelines for your responses:
-      - Keep responses concise (1-3 sentences)
-      - Be friendly and professional
-      - If asked about topics not related to Ajmal's professional background, politely redirect the conversation back to his skills and experience
-      - Never provide personal contact information
-      - If you don't know the answer to something, say you're not sure but would be happy to discuss Ajmal's professional experience
-      `
-    };
+        // Log that we're initializing OpenAI
+        context.log('Initializing OpenAI with API key:', 
+            process.env.OPENAI_API_KEY ? '***KEY_PRESENT***' : 'MISSING');
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [systemPrompt, ...messages],
-      temperature: 0.7,
-      max_tokens: 150
-    });
+        // Initialize OpenAI with the API key
+        const openai = new OpenAI({
+            apiKey: process.env.OPENAI_API_KEY
+        });
+        
+        // Simple test to verify OpenAI initialization
+        const responseBody = {
+            message: "Chatbot API is working with OpenAI!",
+            openaiInitialized: !!openai,
+            timestamp: new Date().toISOString(),
+            method: req.method,
+            nodeVersion: process.version,
+            environment: process.env.NODE_ENV || 'development'
+        };
 
-    context.res = {
-      status: 200,
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "application/json"
-      },
-      body: { 
-        text: response.choices[0].message.content 
-      }
-    };
+        context.log('Successfully initialized OpenAI, sending response');
+        
+        context.res = {
+            status: 200,
+            headers: {
+                ...corsHeaders,
+                "Content-Type": "application/json"
+            },
+            body: responseBody
+        };
+        
+    } catch (error) {
+        // Log the full error
+        context.log.error('Error in chatbot function:', {
+            message: error.message,
+            stack: error.stack,
+            code: error.code,
+            status: error.status || 500
+        });
 
-  } catch (error) {
-    console.error('Chatbot error:', error);
-    
-    // Enhanced error details
-    const errorDetails = {
-      message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-      code: error.code,
-      status: error.status || 500
-    };
-    
-    console.error('Error details:', JSON.stringify(errorDetails, null, 2));
-    
-    context.res = {
-      status: error.status || 500,
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "application/json"
-      },
-      body: { 
-        error: "I'm having trouble connecting to the AI assistant. Please try again later.",
-        details: process.env.NODE_ENV === 'development' ? errorDetails : undefined
-      }
-    };
-    
-    // Make sure to log the full error to Azure's logging
-    context.log.error('Chatbot API Error:', error);
-  }
+        // Return error response
+        const isDevelopment = process.env.NODE_ENV === 'development';
+        context.res = {
+            status: error.status || 500,
+            headers: {
+                ...corsHeaders,
+                "Content-Type": "application/json"
+            },
+            body: {
+                error: "Internal Server Error",
+                message: isDevelopment ? error.message : 'An error occurred',
+                code: error.code,
+                ...(isDevelopment ? { stack: error.stack } : {})
+            }
+        };
+    }
+}
+
+// Export the function for Azure Functions
+module.exports = {
+    default: chatbot
 };
