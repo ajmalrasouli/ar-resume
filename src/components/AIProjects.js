@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import ImageGenerator from './ImageGenerator';
+import Chatbot from './Chatbot';
 
 const AIProjects = ({ aiPrompt, setAiPrompt, aiOutput, generateText }) => {
   return (
@@ -36,7 +37,22 @@ const AIProjects = ({ aiPrompt, setAiPrompt, aiOutput, generateText }) => {
         </div>
 
         {/* Image Generator Card */}
-        <ImageGenerator />
+        <div className="card mb-4">
+          <div className="card-body">
+            <ImageGenerator />
+          </div>
+        </div>
+
+        {/* AI Chatbot */}
+        <div className="card">
+          <div className="card-body">
+            <h3 className="card-title">AI Assistant</h3>
+            <p className="card-text">
+              Chat with an AI assistant that knows about my skills and experience!
+            </p>
+            <Chatbot />
+          </div>
+        </div>
       </div>
     </section>
   );

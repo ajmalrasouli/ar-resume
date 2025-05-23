@@ -1,5 +1,12 @@
 {
   "name": "api",
+  "version": "1.0.0",
+  "description": "API for AI-powered resume with chatbot functionality",
+  "main": "index.js",
+  "scripts": {
+    "start": "func start",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "dependencies": {
     "@azure/functions": "^4.7.2",
     "@upstash/ratelimit": "^0.2.0",
@@ -8,5 +15,7 @@
     "dotenv": "^16.5.0",
     "node-fetch": "^2.7.0",
     "openai": "^4.100.0"
-  }
+  },
+  "author": "Ajmal Rasouli",
+  "license": "MIT"
 }
