@@ -32,6 +32,18 @@ const resumeData = {
 };
 
 module.exports = async function (context, req) {
+  // Check for OpenAI API key
+  if (!process.env.OPENAI_API_KEY) {
+    context.log.error('OpenAI API key is not set in environment variables');
+    return {
+      status: 500,
+      body: { 
+        error: 'Server configuration error. Please contact the administrator.',
+        details: 'OpenAI API key is not configured'
+      }
+    };
+  }
+
   // Set CORS headers
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -102,6 +114,16 @@ module.exports = async function (context, req) {
   } catch (error) {
     console.error('Chatbot error:', error);
     
+    // Enhanced error details
+    const errorDetails = {
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      code: error.code,
+      status: error.status || 500
+    };
+    
+    console.error('Error details:', JSON.stringify(errorDetails, null, 2));
+    
     context.res = {
       status: error.status || 500,
       headers: {
@@ -110,8 +132,11 @@ module.exports = async function (context, req) {
       },
       body: { 
         error: "I'm having trouble connecting to the AI assistant. Please try again later.",
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        details: process.env.NODE_ENV === 'development' ? errorDetails : undefined
       }
     };
+    
+    // Make sure to log the full error to Azure's logging
+    context.log.error('Chatbot API Error:', error);
   }
 };
