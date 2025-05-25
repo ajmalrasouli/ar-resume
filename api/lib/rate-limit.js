@@ -1,5 +1,12 @@
 const { TableClient } = require("@azure/data-tables");
-const connectionString = process.env.CUSTOM_STORAGE_CONNECTION;
+
+// Get connection string from environment variables
+const connectionString = process.env.CUSTOM_STORAGE_CONNECTION || process.env.AzureWebJobsStorage;
+
+if (!connectionString) {
+    console.error('Error: Missing Azure Storage connection string. Please set CUSTOM_STORAGE_CONNECTION or AzureWebJobsStorage environment variable.');
+    throw new Error('Azure Storage connection string is not configured');
+}
 
 const RATE_LIMIT = 5;
 const WINDOW_MS = 60 * 1000;

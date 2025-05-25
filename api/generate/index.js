@@ -1,5 +1,5 @@
 const OpenAI = require('openai');
-const rateLimit = require('../../lib/rate-limit');
+const rateLimit = require('../lib/rate-limit');
 
 module.exports = async function (context, req) {
   try {
