@@ -2,6 +2,7 @@
 
 [![Website](https://img.shields.io/badge/Visit-My%20Resume-0078D4?style=for-the-badge&logo=microsoft-azure&logoColor=white)](https://lemon-desert-05dc5301e.6.azurestaticapps.net)
 [![Visitor Count](https://badge.tcblabs.net/api/hc/arasouli/index)](https://lemon-desert-05dc5301e.6.azurestaticapps.net)
+[![Azure Static Web Apps CI/CD](https://github.com/ajmalrasouli/ar-resume/actions/workflows/azure-static-web-apps-ambitious-island-0ade2b403.yml/badge.svg)](https://github.com/ajmalrasouli/ar-resume/actions)
 
 ## About This Project
 
@@ -14,14 +15,18 @@ This is my personal resume website built with React and hosted on Azure Static W
 - **Modern React Frontend**: 
   - Built with functional components and React hooks
   - Interactive UI with real-time feedback
+  - Smooth navigation with React Router
 - **Azure Integration**:
   - Hosted on Azure Static Web Apps
   - Serverless backend with Azure Functions
   - Visitor counter using Cosmos DB
 - **Responsive Design**: Works on all device sizes
 - **AI-Powered Features**:
-  - Text Generation: Generate text using AI
-  - Image Generation: Create images from text prompts using Stability AI
+  - **AI Chatbot**: Interactive assistant that answers questions about my experience and skills
+  - **Text Generation**: Generate text using OpenAI's GPT-4
+  - **Image Generation**: Create images from text prompts using Stability AI
+  - **Rate Limiting**: API protection with Azure Table Storage
+  - **Fallback Responses**: Graceful degradation when services are unavailable
 
 ## 🛠️ Tech Stack
 
@@ -33,7 +38,10 @@ This is my personal resume website built with React and hosted on Azure Static W
 - **Backend**:
   - Azure Functions (Node.js)
   - Cosmos DB (for visitor counter)
-  - Third-party API integration (Stability AI)
+  - Azure Table Storage (for rate limiting)
+  - OpenAI API Integration
+  - Stability AI API Integration
+  - Comprehensive error handling and logging
   
 - **DevOps**:
   - GitHub Actions for CI/CD

@@ -1,8 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import './css/styles.css';
 import AIProjects from './components/AIProjects';
 
 function App() {
+  // Scroll to top on component mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // State for AI Text Generator
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiOutput, setAiOutput] = useState(<p className="text-muted mb-0">AI response will appear here...</p>);
