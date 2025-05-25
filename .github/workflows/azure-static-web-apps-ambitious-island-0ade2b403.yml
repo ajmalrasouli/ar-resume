@@ -23,21 +23,21 @@ jobs:
         with:
           node-version: 18
           
+      # Create lib directory structure in the right location
+      - name: Prepare API directory structure
+        run: |
+          mkdir -p api/lib
+          cp lib/rate-limit.js api/lib/rate-limit.js
+          
       - name: Install API dependencies
         working-directory: api
         run: |
           npm install
-          npm install @azure/data-tables  # Ensure this package is installed
+          npm install @azure/data-tables
           
       - name: Build Frontend
         run: npm install && npm run build
         
-      - name: Include lib folder in API
-        working-directory: api
-        run: |
-          mkdir -p lib
-          cp -R ../lib/* lib/  # Copy lib folder to api folder
-          
       - name: Build And Deploy
         uses: Azure/static-web-apps-deploy@v1
         with:
