@@ -18,16 +18,27 @@ jobs:
           submodules: true
           fetch-depth: 0
           
+      - name: Verify repository structure
+        run: |
+          ls -la
+          ls -la lib/ || echo "No lib folder found"
+          ls -la api/ || echo "No api folder found"
+          
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
           
-      # Create lib directory structure in the right location
+      # Copy rate-limit.js from wherever it is to api/lib
       - name: Prepare API directory structure
         run: |
           mkdir -p api/lib
-          cp lib/rate-limit.js api/lib/rate-limit.js
+          # Try multiple possible locations
+          cp lib/rate-limit.js api/lib/ || \
+          cp api/../lib/rate-limit.js api/lib/ || \
+          cp src/lib/rate-limit.js api/lib/ || \
+          echo "Warning: Could not find rate-limit.js"
+          ls -la api/lib/
           
       - name: Install API dependencies
         working-directory: api
