@@ -1,0 +1,6 @@
+# .funcignore
+# Exclude everything EXCEPT these:
+!lib/rate-limit.js
+!api/**/*.js
+!host.json
+!package.json

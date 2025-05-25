@@ -1,5 +1,5 @@
 const OpenAI = require('openai');
-const rateLimit = require('../../lib/rate-limit');
+const rateLimit = require('../lib/rate-limit');
 const resumeData = require('./resume-data');
 
 async function chatbot(context, req) {
