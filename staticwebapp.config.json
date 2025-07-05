@@ -5,14 +5,14 @@
   },
   "routes": [
     {
-      "route": "/*",
-      "statusCode": 301,
-      "redirect": "https://www.ajmaltech.com"
-    },
-    {
       "route": "/api/*",
       "allowedRoles": ["anonymous"],
       "methods": ["GET", "POST", "OPTIONS"]
+    },
+    {
+      "route": "/*",
+      "statusCode": 301,
+      "redirect": "https://www.ajmaltech.com"
     }
   ],
   "responseOverrides": {
