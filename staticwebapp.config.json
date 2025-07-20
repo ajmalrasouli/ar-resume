@@ -8,13 +8,7 @@
       "route": "/api/*",
       "allowedRoles": ["anonymous"],
       "methods": ["GET", "POST", "OPTIONS"]
-    },
-    // TEMPORARILY REMOVED - Uncomment after SSL certificate is working
-    // {
-    //   "route": "/*",
-    //   "statusCode": 301,
-    //   "redirect": "https://www.ajmaltech.com"
-    // }
+    }
   ],
   "responseOverrides": {
     "400": {
